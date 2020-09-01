@@ -109,43 +109,43 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTOnlyEnd);
 
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocStart);
+    // RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocStart);
 
-    int dispatchWidth = vc.windowSize.width / COMPUTE_WG_X_SIZE + ((vc.windowSize.width % COMPUTE_WG_X_SIZE) > 0 ? 1 : 0);
-    int dispatchHeight = vc.windowSize.height / COMPUTE_WG_Y_SIZE + ((vc.windowSize.height % COMPUTE_WG_Y_SIZE) > 0 ? 1 : 0);
+    // int dispatchWidth = vc.windowSize.width / COMPUTE_WG_X_SIZE + ((vc.windowSize.width % COMPUTE_WG_X_SIZE) > 0 ? 1 : 0);
+    // int dispatchHeight = vc.windowSize.height / COMPUTE_WG_Y_SIZE + ((vc.windowSize.height % COMPUTE_WG_Y_SIZE) > 0 ? 1 : 0);
 
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughStart);
+    // RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughStart);
 
-    m_roughPrepare->dispatch(cmd, dispatchWidth, dispatchHeight);
-    computeShaderImageBarrier(cmd, {m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()});
+    // m_roughPrepare->dispatch(cmd, dispatchWidth, dispatchHeight);
+    // computeShaderImageBarrier(cmd, {m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()});
 
-    for(int i = 0; i < 10; ++i) {
-        m_roughBlurH->dispatch(cmd, dispatchWidth, dispatchHeight);
-        computeShaderImageBarrier(cmd, {m_roughColorsA.get(), m_roughColorsB.get()});
-        m_roughBlurV->dispatch(cmd, dispatchWidth, dispatchHeight);
-        computeShaderImageBarrier(cmd, {m_roughColorsA.get(), m_roughColorsB.get()});
-    }
+    // for(int i = 0; i < 10; ++i) {
+    //     m_roughBlurH->dispatch(cmd, dispatchWidth, dispatchHeight);
+    //     computeShaderImageBarrier(cmd, {m_roughColorsA.get(), m_roughColorsB.get()});
+    //     m_roughBlurV->dispatch(cmd, dispatchWidth, dispatchHeight);
+    //     computeShaderImageBarrier(cmd, {m_roughColorsA.get(), m_roughColorsB.get()});
+    // }
 
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughEnd);
+    // RG().profiler().writeTimestamp(cmd, TimestampQueryID::RoughEnd);
 
-    m_postprocess->dispatch(cmd, dispatchWidth, dispatchHeight);
-    computeShaderImageBarrier(cmd, {
-                                       m_baseImage.get(),
-                                       m_normalImage.get(),
-                                       m_roughImage.get(),
-                                       m_finalImage.get(),
-                                       m_roughTransitions.get(),
-                                       m_roughColorsA.get(),
-                                       m_roughColorsB.get(),
-                                   });
+    // m_postprocess->dispatch(cmd, dispatchWidth, dispatchHeight);
+    // computeShaderImageBarrier(cmd, {
+    //                                    m_baseImage.get(),
+    //                                    m_normalImage.get(),
+    //                                    m_roughImage.get(),
+    //                                    m_finalImage.get(),
+    //                                    m_roughTransitions.get(),
+    //                                    m_roughColorsA.get(),
+    //                                    m_roughColorsB.get(),
+    //                                });
 
-    ImGui::Checkbox("Use FXAA", &m_useFXAA);
-    if(m_useFXAA) {
-        m_fxaa->dispatch(cmd, dispatchWidth, dispatchHeight);
-        std::swap(m_baseImage, m_finalImage);
-    }
+    // ImGui::Checkbox("Use FXAA", &m_useFXAA);
+    // if(m_useFXAA) {
+    //     m_fxaa->dispatch(cmd, dispatchWidth, dispatchHeight);
+    //     std::swap(m_baseImage, m_finalImage);
+    // }
 
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocEnd);
+    // RG().profiler().writeTimestamp(cmd, TimestampQueryID::PostprocEnd);
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalEnd);
 
@@ -390,13 +390,13 @@ const gpu::Image& Raytracer::selectResultImage()
 {
     // For debugging purposes the result image can be selected via ImGui.
 
-    const char* imageNames[] = {"Final", "Base/Temp", "Normal", "Rough", "RTransition", "RCA", "RCB"};
-    gpu::Image* images[] = {m_finalImage.get(),       m_baseImage.get(),    m_normalImage.get(), m_roughImage.get(),
-                            m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()};
+    // const char* imageNames[] = {"Final", "Base/Temp", "Normal", "Rough", "RTransition", "RCA", "RCB"};
+    // gpu::Image* images[] = {m_finalImage.get(),       m_baseImage.get(),    m_normalImage.get(), m_roughImage.get(),
+    //                         m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()};
 
-    // const char* imageNames[] = {"Base/Temp", "Normal", "Rough"};
-    // gpu::Image* images[] = {m_baseImage.get(),    m_normalImage.get(), m_roughImage.get()};
-    // static_assert(RAYGUN_ARRAY_COUNT(imageNames) == RAYGUN_ARRAY_COUNT(images));
+    const char* imageNames[] = {"Base/Temp", "Normal", "Rough"};
+    gpu::Image* images[] = {m_baseImage.get(),    m_normalImage.get(), m_roughImage.get()};
+    static_assert(RAYGUN_ARRAY_COUNT(imageNames) == RAYGUN_ARRAY_COUNT(images));
 
     static int selectedResult = 0;
     ImGui::Combo("Image", &selectedResult, imageNames, RAYGUN_ARRAY_COUNT(imageNames));
