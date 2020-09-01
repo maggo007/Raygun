@@ -64,6 +64,8 @@ class BottomLevelAS {
 
     operator vk::AccelerationStructureKHR() const { return *m_structure; }
 
+    void updateASStructure(const vk::CommandBuffer& cmd, const Mesh& mesh);
+
   private:
     vk::UniqueAccelerationStructureKHR m_structure;
     vk::UniqueDeviceMemory m_memory;

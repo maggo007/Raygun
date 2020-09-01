@@ -53,6 +53,11 @@ class Raygun {
     /// Signals the engine to initiate shutdown.
     void quit();
 
+    /// Pause/resume render step
+    void pauseRendering();
+
+    void resumeRendering();
+
     Config& config();
 
     glfw::Runtime& glfwRuntime();
@@ -110,6 +115,8 @@ class Raygun {
     UniqueScene m_nextScene;
 
     bool m_shouldQuit = false;
+
+    bool m_advanceFrame = true;
 
     Clock::duration m_time = Clock::duration::zero();
 

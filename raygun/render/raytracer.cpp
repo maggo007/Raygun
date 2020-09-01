@@ -69,6 +69,7 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmdtime)
             model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
         }
         else {
+            model->bottomLevelAS->updateASStructure(*cmd, *model->mesh);
         }
     }
 
@@ -149,7 +150,6 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalEnd);
 
     return selectResultImage();
-    // return *m_baseImage.get();
 }
 
 void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
@@ -393,7 +393,10 @@ const gpu::Image& Raytracer::selectResultImage()
     const char* imageNames[] = {"Final", "Base/Temp", "Normal", "Rough", "RTransition", "RCA", "RCB"};
     gpu::Image* images[] = {m_finalImage.get(),       m_baseImage.get(),    m_normalImage.get(), m_roughImage.get(),
                             m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()};
-    static_assert(RAYGUN_ARRAY_COUNT(imageNames) == RAYGUN_ARRAY_COUNT(images));
+
+    // const char* imageNames[] = {"Base/Temp", "Normal", "Rough"};
+    // gpu::Image* images[] = {m_baseImage.get(),    m_normalImage.get(), m_roughImage.get()};
+    // static_assert(RAYGUN_ARRAY_COUNT(imageNames) == RAYGUN_ARRAY_COUNT(images));
 
     static int selectedResult = 0;
     ImGui::Combo("Image", &selectedResult, imageNames, RAYGUN_ARRAY_COUNT(imageNames));

@@ -59,6 +59,14 @@ Input InputSystem::handleEvents()
         if(pressed(GLFW_KEY_F10)) {
             RG().quit();
         }
+
+        if (pressed(GLFW_KEY_F12)){
+            RG().pauseRendering();
+        }
+
+        if (pressed(GLFW_KEY_F11)){
+            RG().resumeRendering();
+        }
     }
 
     if(glm::length(input.dir) > 1.0f) {

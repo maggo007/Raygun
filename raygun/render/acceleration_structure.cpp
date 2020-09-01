@@ -210,7 +210,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
-        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
         createInfo.setMaxGeometryCount(1);
         createInfo.setPGeometryInfos(&geometryTypeInfo);
 
@@ -247,7 +247,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 
         vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
         buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
-        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
         buildInfo.setDstAccelerationStructure(*m_structure);
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
@@ -255,6 +255,69 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 
         cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
     }
+}
+
+void BottomLevelAS::updateASStructure(const vk::CommandBuffer& cmd, const Mesh& mesh){
+    //VulkanContext& vc = RG().vc();
+
+    // setup
+    {
+        // vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+        // geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eTriangles);
+        // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)mesh.numFaces());
+        // geometryTypeInfo.setIndexType(vk::IndexType::eUint32);
+        // geometryTypeInfo.setMaxVertexCount((uint32_t)mesh.vertices.size());
+        // geometryTypeInfo.setVertexFormat(vk::Format::eR32G32B32Sfloat);
+
+        // vk::AccelerationStructureCreateInfoKHR createInfo = {};
+        // createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+        // createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        // createInfo.setMaxGeometryCount(1);
+        // createInfo.setPGeometryInfos(&geometryTypeInfo);
+
+        // std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+
+        // vc.setObjectName(*m_structure, "BLAS Structure");
+        // vc.setObjectName(*m_memory, "BLAS Memory");
+        // m_scratch->setName("BLAS Scratch");
+    }
+
+    // build
+    {
+        vk::AccelerationStructureGeometryTrianglesDataKHR triangles = {};
+        triangles.setVertexData(mesh.vertexBufferRef.bufferAddress);
+        triangles.setVertexFormat(vk::Format::eR32G32B32Sfloat);
+        triangles.setVertexStride(mesh.vertexBufferRef.elementSize);
+        triangles.setIndexData(mesh.indexBufferRef.bufferAddress);
+        triangles.setIndexType(vk::IndexType::eUint32);
+
+        vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
+        offsetInfo.setPrimitiveCount((uint32_t)mesh.numFaces());
+        offsetInfo.setPrimitiveOffset(mesh.indexBufferRef.offsetInBytes);
+        offsetInfo.setFirstVertex(mesh.vertexBufferRef.offsetInElements());
+
+        vk::AccelerationStructureGeometryDataKHR geometryData = {};
+        geometryData.setTriangles(triangles);
+
+        std::array<vk::AccelerationStructureGeometryKHR, 1> geometries;
+        geometries[0].setGeometry(geometryData);
+        geometries[0].setGeometryType(vk::GeometryTypeKHR::eTriangles);
+        geometries[0].setFlags(vk::GeometryFlagBitsKHR::eOpaque);
+
+        const auto pGeometires = geometries.data();
+
+        vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
+        buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        buildInfo.setDstAccelerationStructure(*m_structure);
+        buildInfo.setGeometryCount((uint32_t)geometries.size());
+        buildInfo.setPpGeometries(&pGeometires);
+        buildInfo.setScratchData(m_scratch->address());
+        buildInfo.setUpdate(true);
+        buildInfo.setSrcAccelerationStructure(*m_structure);
+        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
+    }
+
 }
 
 void accelerationStructureBarrier(const vk::CommandBuffer& cmd)

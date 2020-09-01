@@ -103,33 +103,38 @@ void Raygun::loop()
 
         const auto timeDelta = updateTimestamp();
 
-        m_profiler->startFrame();
+        if (m_advanceFrame){
 
-        if(m_nextScene) {
-            finalizeLoadScene();
-        }
+            m_profiler->startFrame();
 
-        m_renderSystem->preSimulation();
-
-        m_scene->preSimulation();
-
-        m_physicsSystem->update(timeDelta);
-
-        if(!ui::runUI(*m_scene->root, timeDelta, input)) {
-            m_scene->processInput(input, timeDelta);
-        }
-
-        m_scene->root->forEachEntity([timeDelta](auto& ent) {
-            if(auto animEnt = dynamic_cast<AnimatableEntity*>(&ent)) {
-                animEnt->update(timeDelta);
+            if(m_nextScene) {
+                finalizeLoadScene();
             }
-        });
 
-        m_scene->update(timeDelta);
 
-        m_audioSystem->update();
+            m_renderSystem->preSimulation();
 
-        m_renderSystem->render(*m_scene);
+
+            m_scene->preSimulation();
+
+            //m_physicsSystem->update(timeDelta);
+
+            if(!ui::runUI(*m_scene->root, timeDelta, input)) {
+                m_scene->processInput(input, timeDelta);
+            }
+
+            m_scene->root->forEachEntity([timeDelta](auto& ent) {
+                if(auto animEnt = dynamic_cast<AnimatableEntity*>(&ent)) {
+                    animEnt->update(timeDelta);
+                }
+            });
+
+            m_scene->update(timeDelta);
+
+            //m_audioSystem->update();
+
+            m_renderSystem->render(*m_scene);
+        }
     }
 
     RAYGUN_INFO("End main loop");
@@ -141,6 +146,23 @@ void Raygun::quit()
 
     m_shouldQuit = true;
 }
+
+void Raygun::pauseRendering()
+{
+    if (m_advanceFrame)
+        RAYGUN_INFO("Stop rendering");
+
+    m_advanceFrame = false;
+}
+
+void Raygun::resumeRendering()
+{
+    if (!m_advanceFrame)
+        RAYGUN_INFO("Resume rendering");
+
+    m_advanceFrame = true;
+}
+
 
 Config& Raygun::config()
 {

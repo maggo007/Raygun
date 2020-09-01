@@ -10,11 +10,11 @@ ExampleScene::ExampleScene()
 {
     // setup level
     auto level = RG().resourceManager().loadEntity("room");
-    level->forEachEntity([](Entity& entity) {
-        if(entity.model) {
-            RG().physicsSystem().attachRigidStatic(entity, GeometryType::TriangleMesh);
-        }
-    });
+    //level->forEachEntity([](Entity& entity) {
+    //    if(entity.model) {
+    //        RG().physicsSystem().attachRigidStatic(entity, GeometryType::TriangleMesh);
+    //    }
+    //});
     root->addChild(level);
 
     // setup ball
@@ -50,9 +50,9 @@ void ExampleScene::processInput(raygun::input::Input input, double timeDelta)
 
     const auto strength = 2000.0 * timeDelta;
 
-    auto rigidDynamic = dynamic_cast<physx::PxRigidDynamic*>(m_ball->physicsActor.get());
-    RAYGUN_ASSERT(rigidDynamic);
-    rigidDynamic->addTorque((float)strength * physx::PxVec3(inputDir.x, 0.f, inputDir.y), physx::PxForceMode::eIMPULSE);
+    //auto rigidDynamic = dynamic_cast<physx::PxRigidDynamic*>(m_ball->physicsActor.get());
+    //RAYGUN_ASSERT(rigidDynamic);
+    //rigidDynamic->addTorque((float)strength * physx::PxVec3(inputDir.x, 0.f, inputDir.y), physx::PxForceMode::eIMPULSE);
 }
 
 void ExampleScene::update(double)
@@ -60,7 +60,7 @@ void ExampleScene::update(double)
     camera->moveTo(m_ball->transform().position + CAMERA_OFFSET);
     camera->lookAt(m_ball->transform().position);
 
-    m_ball->update();
+    //m_ball->update();
 }
 
 void ExampleScene::showMenu()
