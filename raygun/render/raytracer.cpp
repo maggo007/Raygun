@@ -67,8 +67,8 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmdtime)
     for(auto& model: models) {
         if(!model->bottomLevelAS) {
             model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
-        } else {
-
+        }
+        else {
         }
     }
 
@@ -149,7 +149,7 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalEnd);
 
     return selectResultImage();
-    //return *m_baseImage.get();
+    // return *m_baseImage.get();
 }
 
 void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
@@ -276,7 +276,7 @@ namespace {
 
 void Raytracer::setupRaytracingPipeline()
 {
-    const auto sbtStride = m_properties.shaderGroupHandleSize;
+    const auto sbtStride = m_properties.shaderGroupBaseAlignment;
 
     std::vector<vk::PipelineShaderStageCreateInfo> stages;
     std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups;
@@ -312,10 +312,12 @@ void Raytracer::setupRaytracingPipeline()
         groups.push_back(closestHitShaderGroupInfo((uint32_t)groups.size()));
     }
 
-    m_raygenSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
-    m_missSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
-    m_hitSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
-    m_callableSbt.setStride(sbtStride).setSize(groups.size() * sbtStride);
+    const auto sbtSize = groups.size() * sbtStride;
+
+    m_raygenSbt.setStride(sbtStride).setSize(sbtSize);
+    m_missSbt.setStride(sbtStride).setSize(sbtSize);
+    m_hitSbt.setStride(sbtStride).setSize(sbtSize);
+    m_callableSbt.setStride(sbtStride).setSize(sbtSize);
 
     {
         vk::PipelineLayoutCreateInfo info = {};
@@ -335,20 +337,7 @@ void Raytracer::setupRaytracingPipeline()
         info.setMaxRecursionDepth(7);
         info.setLayout(*m_pipelineLayout);
 
-        // FIXME: Vulkan SDK >= 1.2.136
-        // https://github.com/KhronosGroup/Vulkan-Hpp/issues/557
-        {
-            const auto vkCreateRayTracingPipelinesKHR =
-                reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vc.device->getProcAddr("vkCreateRayTracingPipelinesKHR"));
-            RAYGUN_ASSERT(vkCreateRayTracingPipelinesKHR);
-
-            VkPipeline pipeline;
-            VkRayTracingPipelineCreateInfoKHR info_ = info;
-            const auto result = vkCreateRayTracingPipelinesKHR(*vc.device, nullptr, 1, &info_, nullptr, &pipeline);
-            RAYGUN_ASSERT(result == VK_SUCCESS);
-
-            m_pipeline = gpu::wrapUnique<vk::Pipeline>(pipeline, *vc.device);
-        }
+        m_pipeline = vc.device->createRayTracingPipelineKHRUnique(nullptr, info);
         vc.setObjectName(*m_pipeline, "Ray Tracer");
     }
 }
@@ -358,12 +347,26 @@ void Raytracer::setupShaderBindingTable()
     const auto sbtSize = m_raygenSbt.size;
     const auto groupCount = (uint32_t)(m_raygenSbt.size / m_raygenSbt.stride);
 
+    std::vector<uint8_t> groupHandles(groupCount * m_properties.shaderGroupHandleSize);
+    vc.device->getRayTracingShaderGroupHandlesKHR(*m_pipeline, 0, groupCount, groupHandles.size(), groupHandles.data());
+
     m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingKHR, vk::MemoryPropertyFlagBits::eHostVisible);
     m_sbtBuffer->setName("Shader Binding Table");
 
-    vc.device->getRayTracingShaderGroupHandlesKHR(*m_pipeline, 0, groupCount, sbtSize, m_sbtBuffer->map());
+    // Shader group handles should be aligned according to
+    // shaderGroupBaseAlignment. The handles we get from
+    // getRayTracingShaderGroupHandlesKHR are consecutive in memory
+    // (shaderGroupHandleSize), hence we need to copy them over adjusting the
+    // alignment.
+    {
+        auto p = reinterpret_cast<uint8_t*>(m_sbtBuffer->map());
+        for(auto i = 0u; i < groupCount; i++) {
+            memcpy(p, groupHandles.data() + i * m_properties.shaderGroupHandleSize, m_properties.shaderGroupHandleSize);
+            p += m_properties.shaderGroupBaseAlignment;
+        }
 
-    m_sbtBuffer->unmap();
+        m_sbtBuffer->unmap();
+    }
 
     m_raygenSbt.setBuffer(*m_sbtBuffer);
     m_missSbt.setBuffer(*m_sbtBuffer);
