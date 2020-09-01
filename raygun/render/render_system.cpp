@@ -93,6 +93,8 @@ void RenderSystem::render(Scene& scene)
 
         updateUniformBuffer(*scene.camera);
 
+        m_raytracer->setupBottomLevelAS(*m_commandBuffer);
+
         m_raytracer->setupTopLevelAS(*m_commandBuffer, scene);
 
         m_raytracer->updateRenderTarget(*m_uniformBuffer, *m_vertexBuffer, *m_indexBuffer, *m_materialBuffer);
@@ -263,6 +265,9 @@ void RenderSystem::updateUniformBuffer(const Camera& camera)
     auto lightLabel = fmt::format("Light Dir {} ###lightdir", ubo.lightDir);
     ImGui::gizmo3D(lightLabel.c_str(), ubo.lightDir);
     ImGui::Checkbox("Show Alpha", &ubo.showAlpha);
+    ImGui::Text("maxComputeWorkGroupCount[0] width= %d", RG().vc().physicalDeviceProperties.limits.maxComputeWorkGroupCount[0]);
+    ImGui::Text("maxComputeWorkGroupCount[1] height= %d", RG().vc().physicalDeviceProperties.limits.maxComputeWorkGroupCount[1]);
+    ImGui::Text("maxComputeWorkGroupCount[2] depth= %d", RG().vc().physicalDeviceProperties.limits.maxComputeWorkGroupCount[2]);
 }
 
 void RenderSystem::updateVertexAndIndexBuffer(std::set<Mesh*>& meshes)

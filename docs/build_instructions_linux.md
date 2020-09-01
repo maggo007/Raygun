@@ -17,7 +17,7 @@
 4. Run the following commands from the root of this repository to build Raygun.
    Adjust the path to PhysX accordingly.
 
-       cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DPhysX_ROOT=$HOME/git/PhysX -B build
+       cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DPhysX_ROOT=$HOME/PhysX -B build
        ninja -C build
 
 5. You can now run the example:

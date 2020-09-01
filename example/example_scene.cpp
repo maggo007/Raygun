@@ -23,8 +23,8 @@ ExampleScene::ExampleScene()
     root->addChild(m_ball);
 
     // setup music
-    auto musicTrack = RG().resourceManager().loadSound("lone_rider");
-    RG().audioSystem().music().play(musicTrack);
+    // auto musicTrack = RG().resourceManager().loadSound("lone_rider");
+    // RG().audioSystem().music().play(musicTrack);
 
     // setup ui stuff
     const auto font = RG().resourceManager().loadFont("NotoSans");

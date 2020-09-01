@@ -52,7 +52,7 @@ Raytracer::Raytracer() : vc(RG().vc())
     RAYGUN_INFO("Raytracer initialized");
 }
 
-void Raytracer::setupBottomLevelAS()
+void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmdtime)
 {
     auto cmd = vc.computeQueue->createCommandBuffer();
     vc.setObjectName(*cmd, "BLAS");
@@ -62,27 +62,31 @@ void Raytracer::setupBottomLevelAS()
 
     cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
+    RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildStart);
     auto models = RG().resourceManager().models();
     for(auto& model: models) {
         if(!model->bottomLevelAS) {
             model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
+        } else {
+
         }
     }
 
     cmd->end();
     vc.computeQueue->submit(*cmd, *fence);
     vc.waitForFence(*fence);
+    RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildEnd);
 }
 
 void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 {
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildStart);
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::TLASBuildStart);
 
     m_topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
 
     accelerationStructureBarrier(cmd);
 
-    RG().profiler().writeTimestamp(cmd, TimestampQueryID::ASBuildEnd);
+    RG().profiler().writeTimestamp(cmd, TimestampQueryID::TLASBuildEnd);
 }
 
 const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
@@ -145,6 +149,7 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::RTTotalEnd);
 
     return selectResultImage();
+    //return *m_baseImage.get();
 }
 
 void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
@@ -338,7 +343,8 @@ void Raytracer::setupRaytracingPipeline()
             RAYGUN_ASSERT(vkCreateRayTracingPipelinesKHR);
 
             VkPipeline pipeline;
-            const auto result = vkCreateRayTracingPipelinesKHR(*vc.device, nullptr, 1, &VkRayTracingPipelineCreateInfoKHR(info), nullptr, &pipeline);
+            VkRayTracingPipelineCreateInfoKHR info_ = info;
+            const auto result = vkCreateRayTracingPipelinesKHR(*vc.device, nullptr, 1, &info_, nullptr, &pipeline);
             RAYGUN_ASSERT(result == VK_SUCCESS);
 
             m_pipeline = gpu::wrapUnique<vk::Pipeline>(pipeline, *vc.device);

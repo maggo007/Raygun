@@ -5,5 +5,9 @@
   "[cpp]": {
     "editor.defaultFormatter": "xaver.clang-format"
   },
-  "shaderc-lint.glslcArgs": "--target-env=vulkan1.2"
+  "shaderc-lint.glslcArgs": "--target-env=vulkan1.2",
+  "cmake.configureOnOpen": false,
+  "files.associations": {
+    "*.def": "cpp"
+  }
 }

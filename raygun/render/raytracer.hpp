@@ -36,7 +36,7 @@ namespace raygun::render {
 struct Raytracer {
     Raytracer();
 
-    void setupBottomLevelAS();
+    void setupBottomLevelAS(vk::CommandBuffer& cmdtime);
 
     void setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene);
 
