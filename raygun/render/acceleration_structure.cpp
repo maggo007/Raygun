@@ -151,7 +151,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
-        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
         createInfo.setMaxGeometryCount(1);
         createInfo.setPGeometryInfos(&geometryTypeInfo);
 
@@ -182,7 +182,99 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
         buildInfo.setDstAccelerationStructure(*m_structure);
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
-        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        buildInfo.setScratchData(m_scratch->address());
+
+        vk::AccelerationStructureBuildOffsetInfoKHR offset = {};
+        offset.setPrimitiveCount((uint32_t)instances.size());
+
+        cmd.buildAccelerationStructureKHR(buildInfo, &offset);
+    }
+
+    m_descriptorInfo.setAccelerationStructureCount(1);
+    m_descriptorInfo.setPAccelerationStructures(&*m_structure);
+}
+
+void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
+{
+    VulkanContext& vc = RG().vc();
+
+    std::vector<vk::AccelerationStructureInstanceKHR> instances;
+    std::vector<InstanceOffsetTableEntry> instanceOffsetTable;
+
+    // Grab instances from scene.
+    scene.root->forEachEntity([&](const Entity& entity) {
+        // if set to invisible, do not descend to children
+        if(!entity.isVisible()) return false;
+
+        if(entity.transform().isZeroVolume()) return false;
+
+        // if no model, then we skip this, but might still render children
+        if(!entity.model) return true;
+
+        const auto instance = instanceFromEntity(*vc.device, entity, (uint32_t)instances.size());
+        instances.push_back(instance);
+
+        const auto& vertexBufferRef = entity.model->mesh->vertexBufferRef;
+        const auto& indexBufferRef = entity.model->mesh->indexBufferRef;
+        const auto& materialBufferRef = entity.model->materialBufferRef;
+
+        auto& entry = instanceOffsetTable.emplace_back();
+        entry.vertexBufferOffset = vertexBufferRef.offsetInElements();
+        entry.indexBufferOffset = indexBufferRef.offsetInElements();
+        entry.materialBufferOffset = materialBufferRef.offsetInElements();
+
+        return true;
+    });
+
+    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instances->setName("Instances");
+
+    m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instanceOffsetTable->setName("Instance Offset Table");
+
+    // // setup
+    // {
+    //     vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+    //     geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
+    //     geometryTypeInfo.setMaxPrimitiveCount((uint32_t)instances.size());
+
+    //     vk::AccelerationStructureCreateInfoKHR createInfo = {};
+    //     createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+    //     createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+    //     createInfo.setMaxGeometryCount(1);
+    //     createInfo.setPGeometryInfos(&geometryTypeInfo);
+
+    //     std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+
+    //     vc.setObjectName(*m_structure, "TLAS Structure");
+    //     vc.setObjectName(*m_memory, "TLAS Memory");
+    //     m_scratch->setName("TLAS Scratch");
+    // }
+
+    // build
+    {
+        vk::AccelerationStructureGeometryInstancesDataKHR instancesData = {};
+        instancesData.setData(m_instances->address());
+
+        vk::AccelerationStructureGeometryDataKHR geometryData = {};
+        geometryData.setInstances(instancesData);
+
+        std::array<vk::AccelerationStructureGeometryKHR, 1> geometries;
+        geometries[0].setGeometry(geometryData);
+        geometries[0].setGeometryType(vk::GeometryTypeKHR::eInstances);
+        geometries[0].setFlags(vk::GeometryFlagBitsKHR::eOpaque);
+
+        const auto pGeometires = geometries.data();
+
+        vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
+        buildInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+        buildInfo.setDstAccelerationStructure(*m_structure);
+        buildInfo.setSrcAccelerationStructure(*m_structure);
+        buildInfo.setGeometryCount((uint32_t)geometries.size());
+        buildInfo.setPpGeometries(&pGeometires);
+        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        buildInfo.setUpdate(true);
         buildInfo.setScratchData(m_scratch->address());
 
         vk::AccelerationStructureBuildOffsetInfoKHR offset = {};
@@ -257,8 +349,9 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
     }
 }
 
-void BottomLevelAS::updateASStructure(const vk::CommandBuffer& cmd, const Mesh& mesh){
-    //VulkanContext& vc = RG().vc();
+void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
+{
+    // VulkanContext& vc = RG().vc();
 
     // setup
     {
@@ -317,7 +410,6 @@ void BottomLevelAS::updateASStructure(const vk::CommandBuffer& cmd, const Mesh& 
         buildInfo.setSrcAccelerationStructure(*m_structure);
         cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
     }
-
 }
 
 void accelerationStructureBarrier(const vk::CommandBuffer& cmd)

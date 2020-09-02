@@ -19,12 +19,12 @@ Ball::Ball() : Entity("Ball", RG().resourceManager().entityLoadPath("ball")), m_
     model = std::move(children().at(0)->model);
     clearChildren();
 
-    RG().physicsSystem().attachRigidDynamic(*this, false, GeometryType::Sphere);
+    // RG().physicsSystem().attachRigidDynamic(*this, false, GeometryType::Sphere);
 
     // our default physics actor is not enough, we also need to adjust its mass.
-    auto rigidBody = dynamic_cast<PxRigidDynamic*>(physicsActor.get());
-    RAYGUN_ASSERT(rigidBody);
-    PxRigidBodyExt::updateMassAndInertia(*rigidBody, 50.0f);
+    // auto rigidBody = dynamic_cast<PxRigidDynamic*>(physicsActor.get());
+    // RAYGUN_ASSERT(rigidBody);
+    // PxRigidBodyExt::updateMassAndInertia(*rigidBody, 50.0f);
 }
 
 void Ball::update()
@@ -34,16 +34,16 @@ void Ball::update()
     // We do this here for simplicity. One could also grab the contact
     // information from the physics engine.
 
-    auto rigidBody = dynamic_cast<PxRigidDynamic*>(physicsActor.get());
-    RAYGUN_ASSERT(rigidBody);
+    // auto rigidBody = dynamic_cast<PxRigidDynamic*>(physicsActor.get());
+    // RAYGUN_ASSERT(rigidBody);
 
-    const auto velocity = toVec3(rigidBody->getLinearVelocity());
-    const auto change = glm::length(m_previousVelocity - velocity);
+    // const auto velocity = toVec3(rigidBody->getLinearVelocity());
+    // const auto change = glm::length(m_previousVelocity - velocity);
 
-    if(change >= BUMP_SOUND_VELOCITY_CHANGE_THRESHOLD) {
-        const auto gain = std::clamp(change / 10.0, 0.1, 1.0);
-        RG().audioSystem().playSoundEffect(m_bumpSound, gain, transform().position);
-    }
+    // if(change >= BUMP_SOUND_VELOCITY_CHANGE_THRESHOLD) {
+    //     const auto gain = std::clamp(change / 10.0, 0.1, 1.0);
+    //     RG().audioSystem().playSoundEffect(m_bumpSound, gain, transform().position);
+    // }
 
-    m_previousVelocity = velocity;
+    // m_previousVelocity = velocity;
 }

@@ -69,13 +69,16 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmdtime)
             model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
         }
         else {
-            model->bottomLevelAS->updateASStructure(*cmd, *model->mesh);
+            if(m_updateBLAS) {
+                model->bottomLevelAS->updateBLAS(*cmd, *model->mesh);
+            }
         }
     }
 
     cmd->end();
     vc.computeQueue->submit(*cmd, *fence);
     vc.waitForFence(*fence);
+
     RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildEnd);
 }
 
@@ -83,7 +86,14 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 {
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::TLASBuildStart);
 
-    m_topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
+    if(!m_topLevelAS) {
+        m_topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
+    }
+    else {
+        if(m_updateTLAS) {
+            m_topLevelAS->updateTLAS(cmd, scene);
+        }
+    }
 
     accelerationStructureBarrier(cmd);
 
@@ -92,6 +102,9 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 
 const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 {
+    ImGui::Checkbox("Update BLAS", &m_updateBLAS);
+    ImGui::Checkbox("Update TLAS", &m_updateTLAS);
+
     cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, *m_pipeline);
 
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, *m_pipelineLayout, 0, m_descriptorSet.set(), {});
@@ -395,7 +408,7 @@ const gpu::Image& Raytracer::selectResultImage()
     //                         m_roughTransitions.get(), m_roughColorsA.get(), m_roughColorsB.get()};
 
     const char* imageNames[] = {"Base/Temp", "Normal", "Rough"};
-    gpu::Image* images[] = {m_baseImage.get(),    m_normalImage.get(), m_roughImage.get()};
+    gpu::Image* images[] = {m_baseImage.get(), m_normalImage.get(), m_roughImage.get()};
     static_assert(RAYGUN_ARRAY_COUNT(imageNames) == RAYGUN_ARRAY_COUNT(images));
 
     static int selectedResult = 0;

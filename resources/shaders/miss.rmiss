@@ -75,8 +75,8 @@ vec3 skyMix(vec3 sunTone, vec3 skyTone, vec3 scatterTone, float scatterFactor, f
 
 void main()
 {
-    vec3 res = skyMix(vec3(1.0, 0.6, 0.05), vec3(0.2, 0.4, 0.8), vec3(1.0, 0.3, 0.0), 1.3, 80);
-
+    //vec3 res = skyMix(vec3(1.0, 0.6, 0.05), vec3(0.2, 0.4, 0.8), vec3(1.0, 0.3, 0.0), 1.3, 80);
+    vec3 res = vec3(0,0,0);
     payload.hitValue = res;
     payload.roughValue = vec4(res, 0);
     payload.depth = 10000.f;

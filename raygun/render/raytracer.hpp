@@ -36,7 +36,7 @@ namespace raygun::render {
 struct Raytracer {
     Raytracer();
 
-    void setupBottomLevelAS(vk::CommandBuffer& cmdtime);
+    void setupBottomLevelAS(vk::CommandBuffer& cmd);
 
     void setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene);
 
@@ -80,6 +80,8 @@ struct Raytracer {
     gpu::UniqueBuffer m_sbtBuffer;
 
     bool m_useFXAA = true;
+    bool m_updateBLAS = true;
+    bool m_updateTLAS = true;
     compute::UniqueComputePass m_postprocess;
     compute::UniqueComputePass m_fxaa;
 

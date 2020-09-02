@@ -41,6 +41,8 @@ class TopLevelAS {
 
     const vk::WriteDescriptorSetAccelerationStructureKHR& descriptorInfo() const { return m_descriptorInfo; }
 
+    void updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene);
+
   private:
     vk::WriteDescriptorSetAccelerationStructureKHR m_descriptorInfo = {};
 
@@ -64,7 +66,7 @@ class BottomLevelAS {
 
     operator vk::AccelerationStructureKHR() const { return *m_structure; }
 
-    void updateASStructure(const vk::CommandBuffer& cmd, const Mesh& mesh);
+    void updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh);
 
   private:
     vk::UniqueAccelerationStructureKHR m_structure;

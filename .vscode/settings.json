@@ -9,5 +9,6 @@
   "cmake.configureOnOpen": false,
   "files.associations": {
     "*.def": "cpp"
-  }
+  },
+  "editor.formatOnSave": true
 }
