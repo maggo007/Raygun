@@ -75,6 +75,8 @@ namespace {
             allocInfo.setPNext(&allocInfoFlags);
 
             memory = vc.device->allocateMemoryUnique(allocInfo);
+            RAYGUN_DEBUG("Memory {} for Type:{} with Vertices:{}", allocInfo.allocationSize, ((int)createInfo.type == 0) ? "TOPLEVEL" : "BOTLEVEL",
+                         createInfo.pGeometryInfos->maxVertexCount);
         }
 
         // bind memory
