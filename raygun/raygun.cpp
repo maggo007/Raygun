@@ -103,7 +103,7 @@ void Raygun::loop()
 
         const auto timeDelta = updateTimestamp();
 
-        if (m_advanceFrame){
+        if(m_advanceFrame) {
 
             m_profiler->startFrame();
 
@@ -111,13 +111,11 @@ void Raygun::loop()
                 finalizeLoadScene();
             }
 
-
             m_renderSystem->preSimulation();
-
 
             m_scene->preSimulation();
 
-            //m_physicsSystem->update(timeDelta);
+            // m_physicsSystem->update(timeDelta);
 
             if(!ui::runUI(*m_scene->root, timeDelta, input)) {
                 m_scene->processInput(input, timeDelta);
@@ -131,7 +129,7 @@ void Raygun::loop()
 
             m_scene->update(timeDelta);
 
-            //m_audioSystem->update();
+            // m_audioSystem->update();
 
             m_renderSystem->render(*m_scene);
         }
@@ -149,20 +147,17 @@ void Raygun::quit()
 
 void Raygun::pauseRendering()
 {
-    if (m_advanceFrame)
-        RAYGUN_INFO("Stop rendering");
+    if(m_advanceFrame) RAYGUN_INFO("Stop rendering");
 
     m_advanceFrame = false;
 }
 
 void Raygun::resumeRendering()
 {
-    if (!m_advanceFrame)
-        RAYGUN_INFO("Resume rendering");
+    if(!m_advanceFrame) RAYGUN_INFO("Resume rendering");
 
     m_advanceFrame = true;
 }
-
 
 Config& Raygun::config()
 {
@@ -295,6 +290,12 @@ double Raygun::updateTimestamp()
     return std::chrono::duration<double>(delta).count();
 }
 
+void Raygun::addMesh()
+{
+    // does nothing at the moment
+    RG().scene().addMesh();
+}
+
 void Raygun::finalizeLoadScene()
 {
     RAYGUN_INFO("Loading scene");
@@ -309,7 +310,7 @@ void Raygun::finalizeLoadScene()
     m_renderSystem->resetUniformBuffer();
 
     m_renderSystem->setupModelBuffers();
-    //m_renderSystem->raytracer().setupBottomLevelAS();
+    // m_renderSystem->raytracer().setupBottomLevelAS();
 
     m_timestamp = Clock::now();
 

@@ -60,11 +60,11 @@ Input InputSystem::handleEvents()
             RG().quit();
         }
 
-        if (pressed(GLFW_KEY_F12)){
-            RG().pauseRendering();
+        if(pressed(GLFW_KEY_F12)) {
+            RG().addMesh();
         }
 
-        if (pressed(GLFW_KEY_F11)){
+        if(pressed(GLFW_KEY_F11)) {
             RG().resumeRendering();
         }
     }

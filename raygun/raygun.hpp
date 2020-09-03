@@ -82,6 +82,8 @@ class Raygun {
 
     Scene& scene();
 
+    void addMesh();
+
     /// Returns the active time passed since engine initialization.
     double time();
 

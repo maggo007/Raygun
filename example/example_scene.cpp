@@ -22,6 +22,12 @@ ExampleScene::ExampleScene()
     m_ball->moveTo({3.0f, 0.0f, -3.0f});
     root->addChild(m_ball);
 
+    // add random balls to scene
+    auto tempmesh = std::make_shared<Ball>();
+    tempmesh->moveTo(vec3(2.0f, 0.0f, 0.0f));
+    m_ballVector.emplace_back(tempmesh);
+    root->addChild(tempmesh);
+
     // setup music
     // auto musicTrack = RG().resourceManager().loadSound("lone_rider");
     // RG().audioSystem().music().play(musicTrack);
@@ -84,3 +90,5 @@ void ExampleScene::showMenu()
 
     // camera->addChild(ui::uiTestWindow(*m_uiFactory));
 }
+
+void ExampleScene::addMesh() {}

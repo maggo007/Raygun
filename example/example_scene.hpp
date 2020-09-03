@@ -11,11 +11,14 @@ class ExampleScene : public raygun::Scene {
 
     void processInput(raygun::input::Input input, double timeDelta) override;
     void update(double timeDelta) override;
+    void addMesh() override;
 
   private:
     static constexpr raygun::vec3 CAMERA_OFFSET = {5.0f, 10.0f, 10.0f};
 
     std::shared_ptr<Ball> m_ball;
+
+    std::vector<std::shared_ptr<Ball>> m_ballVector;
 
     std::unique_ptr<raygun::ui::Factory> m_uiFactory;
     std::shared_ptr<raygun::ui::Window> m_menu;

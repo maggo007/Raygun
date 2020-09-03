@@ -49,6 +49,8 @@ struct Scene {
 
     /// This function is called every simulation sub-step.
     virtual void update([[maybe_unused]] double timeDelta) {}
+
+    virtual void addMesh() {}
 };
 
 using UniqueScene = std::unique_ptr<Scene>;
