@@ -52,7 +52,7 @@ Raytracer::Raytracer() : vc(RG().vc())
     RAYGUN_INFO("Raytracer initialized");
 }
 
-void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmdtime)
+void Raytracer::setupBottomLevelAS()
 {
     auto cmd = vc.computeQueue->createCommandBuffer();
     vc.setObjectName(*cmd, "BLAS");
@@ -60,12 +60,13 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmdtime)
     auto fence = vc.device->createFenceUnique({});
     vc.setObjectName(*fence, "BLAS");
 
-    cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    cmd->begin({vk::CommandBufferUsageFlagBits::eRenderPassContinue});
 
-    RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildStart);
+    // RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildStart);
     auto models = RG().resourceManager().models();
     for(auto& model: models) {
         if(!model->bottomLevelAS) {
+            RAYGUN_DEBUG("Building BLAS from scratch");
             model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
         }
         else {
@@ -79,7 +80,7 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmdtime)
     vc.computeQueue->submit(*cmd, *fence);
     vc.waitForFence(*fence);
 
-    RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildEnd);
+    // RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildEnd);
 }
 
 void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)

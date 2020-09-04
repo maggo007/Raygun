@@ -23,10 +23,18 @@ ExampleScene::ExampleScene()
     root->addChild(m_ball);
 
     // add random balls to scene
-    auto tempmesh = std::make_shared<Ball>();
-    tempmesh->moveTo(vec3(2.0f, 0.0f, 0.0f));
-    m_ballVector.emplace_back(tempmesh);
-    root->addChild(tempmesh);
+    std::srand(1);
+    float LO = -5.0;
+    float HI = 5.0;
+    for(size_t i = 0; i < 20; i++) {
+        auto tempmesh = std::make_shared<Ball>();
+        float r1 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+        float r2 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+        float r3 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+        tempmesh->moveTo(vec3(r1, r2, r3));
+        m_ballVector.emplace_back(tempmesh);
+        root->addChild(tempmesh);
+    }
 
     // setup music
     // auto musicTrack = RG().resourceManager().loadSound("lone_rider");

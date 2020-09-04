@@ -241,6 +241,11 @@ void VulkanContext::setupDevice()
         queueInfos.push_back(presentQueueInfo);
     }
 
+    // not used
+    vk::PhysicalDeviceBufferDeviceAddressFeaturesEXT capturefeatures;
+    capturefeatures.setBufferDeviceAddressCaptureReplay(true);
+    capturefeatures.setBufferDeviceAddress(true);
+
     vk::PhysicalDeviceBufferDeviceAddressFeatures addressFeatures;
     addressFeatures.setBufferDeviceAddress(true);
 

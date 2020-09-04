@@ -93,7 +93,7 @@ void RenderSystem::render(Scene& scene)
 
         updateUniformBuffer(*scene.camera);
 
-        m_raytracer->setupBottomLevelAS(*m_commandBuffer);
+        m_raytracer->setupBottomLevelAS();
 
         m_raytracer->setupTopLevelAS(*m_commandBuffer, scene);
 
