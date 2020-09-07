@@ -102,7 +102,6 @@ void Raygun::loop()
         const auto input = m_inputSystem->handleEvents();
 
         const auto timeDelta = updateTimestamp();
-
         if(m_advanceFrame) {
 
             m_profiler->startFrame();
@@ -131,7 +130,7 @@ void Raygun::loop()
 
             // m_audioSystem->update();
 
-            m_renderSystem->render(*m_scene);
+            m_renderSystem->render(*m_scene, input.reload);
         }
     }
 

@@ -60,7 +60,7 @@ void Raytracer::setupBottomLevelAS()
     auto fence = vc.device->createFenceUnique({});
     vc.setObjectName(*fence, "BLAS");
 
-    cmd->begin({vk::CommandBufferUsageFlagBits::eRenderPassContinue});
+    cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
     // RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildStart);
     auto models = RG().resourceManager().models();

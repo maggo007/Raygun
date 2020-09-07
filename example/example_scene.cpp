@@ -22,7 +22,7 @@ ExampleScene::ExampleScene()
     m_ball->moveTo({3.0f, 0.0f, -3.0f});
     root->addChild(m_ball);
 
-    // add random balls to scene
+    // add random balls to scene https://stackoverflow.com/questions/686353/random-float-number-generation
     std::srand(1);
     float LO = -5.0;
     float HI = 5.0;
