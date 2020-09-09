@@ -110,14 +110,14 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 
 const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 {
-    auto old_forceREbauildBLAS = m_forceRebuildBLAS;
-    auto old_forceREbauildTLAS = m_forceRebuildTLAS;
+    auto old_forceRebuildBLAS = m_forceRebuildBLAS;
+    auto old_forceRebuildTLAS = m_forceRebuildTLAS;
     ImGui::Checkbox("Update BLAS", &m_updateBLAS);
     ImGui::Checkbox("Force Rebuild of BLAS", &m_forceRebuildBLAS);
     ImGui::Checkbox("Update TLAS", &m_updateTLAS);
     ImGui::Checkbox("Force Rebuild of TLAS", &m_forceRebuildTLAS);
     // force reload of scene to build AS with correct upgrade bit
-    if((old_forceREbauildBLAS && !m_forceRebuildBLAS) || (old_forceREbauildTLAS && !m_forceRebuildTLAS)) {
+    if((old_forceRebuildBLAS && !m_forceRebuildBLAS) || (old_forceRebuildTLAS && !m_forceRebuildTLAS)) {
         RG().loadScene(std::make_unique<ExampleScene>());
     }
 
