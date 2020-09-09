@@ -235,7 +235,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
     m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
     m_instanceOffsetTable->setName("Instance Offset Table");
 
-    // // setup
+    // setup not needed for update
     // {
     //     vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
     //     geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
@@ -353,29 +353,29 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 
 void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 {
-    // VulkanContext& vc = RG().vc();
+    VulkanContext& vc = RG().vc();
 
-    // setup
-    {
-        // vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-        // geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eTriangles);
-        // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)mesh.numFaces());
-        // geometryTypeInfo.setIndexType(vk::IndexType::eUint32);
-        // geometryTypeInfo.setMaxVertexCount((uint32_t)mesh.vertices.size());
-        // geometryTypeInfo.setVertexFormat(vk::Format::eR32G32B32Sfloat);
+    // setup not needed for update
+    // {
+    //     vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+    //     geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eTriangles);
+    //     geometryTypeInfo.setMaxPrimitiveCount((uint32_t)mesh.numFaces());
+    //     geometryTypeInfo.setIndexType(vk::IndexType::eUint32);
+    //     geometryTypeInfo.setMaxVertexCount((uint32_t)mesh.vertices.size());
+    //     geometryTypeInfo.setVertexFormat(vk::Format::eR32G32B32Sfloat);
 
-        // vk::AccelerationStructureCreateInfoKHR createInfo = {};
-        // createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
-        // createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
-        // createInfo.setMaxGeometryCount(1);
-        // createInfo.setPGeometryInfos(&geometryTypeInfo);
+    //     vk::AccelerationStructureCreateInfoKHR createInfo = {};
+    //     createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+    //     createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+    //     createInfo.setMaxGeometryCount(1);
+    //     createInfo.setPGeometryInfos(&geometryTypeInfo);
 
-        // std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+    //     std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
 
-        // vc.setObjectName(*m_structure, "BLAS Structure");
-        // vc.setObjectName(*m_memory, "BLAS Memory");
-        // m_scratch->setName("BLAS Scratch");
-    }
+    //     vc.setObjectName(*m_structure, "BLAS Structure");
+    //     vc.setObjectName(*m_memory, "BLAS Memory");
+    //     m_scratch->setName("BLAS Scratch");
+    // }
 
     // build
     {

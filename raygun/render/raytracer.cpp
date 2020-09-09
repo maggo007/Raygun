@@ -52,42 +52,43 @@ Raytracer::Raytracer() : vc(RG().vc())
     RAYGUN_INFO("Raytracer initialized");
 }
 
-void Raytracer::setupBottomLevelAS()
+void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmd2)
 {
-    auto cmd = vc.computeQueue->createCommandBuffer();
-    vc.setObjectName(*cmd, "BLAS");
+    // auto cmd = vc.computeQueue->createCommandBuffer();
+    // vc.setObjectName(*cmd, "BLAS");
 
-    auto fence = vc.device->createFenceUnique({});
-    vc.setObjectName(*fence, "BLAS");
+    // auto fence = vc.device->createFenceUnique({});
+    // vc.setObjectName(*fence, "BLAS");
 
-    cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    // cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
-    // RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildStart);
+    RG().profiler().writeTimestamp(cmd2, TimestampQueryID::BLASBuildStart);
     auto models = RG().resourceManager().models();
     for(auto& model: models) {
-        if(!model->bottomLevelAS) {
+        if(!model->bottomLevelAS || m_forceRebuildBLAS) {
             RAYGUN_DEBUG("Building BLAS from scratch");
-            model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd, *model->mesh);
+            model->bottomLevelAS = std::make_unique<BottomLevelAS>(cmd2, *model->mesh);
         }
         else {
             if(m_updateBLAS) {
-                model->bottomLevelAS->updateBLAS(*cmd, *model->mesh);
+                model->bottomLevelAS->updateBLAS(cmd2, *model->mesh);
             }
         }
     }
 
-    cmd->end();
-    vc.computeQueue->submit(*cmd, *fence);
-    vc.waitForFence(*fence);
-
-    // RG().profiler().writeTimestamp(cmdtime, TimestampQueryID::BLASBuildEnd);
+    // cmd->end();
+    // vc.computeQueue->submit(*cmd, *fence);
+    // vc.waitForFence(*fence);
+    accelerationStructureBarrier(cmd2);
+    RG().profiler().writeTimestamp(cmd2, TimestampQueryID::BLASBuildEnd);
 }
 
 void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 {
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::TLASBuildStart);
 
-    if(!m_topLevelAS) {
+    if(!m_topLevelAS || m_forceRebuildTLAS) {
+        RAYGUN_DEBUG("Building TLAS from scratch");
         m_topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
     }
     else {
@@ -104,7 +105,9 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 {
     ImGui::Checkbox("Update BLAS", &m_updateBLAS);
+    ImGui::Checkbox("Force Rebuild of BLAS", &m_forceRebuildBLAS);
     ImGui::Checkbox("Update TLAS", &m_updateTLAS);
+    ImGui::Checkbox("Force Rebuild of TLAS", &m_forceRebuildTLAS);
 
     cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, *m_pipeline);
 

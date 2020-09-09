@@ -26,7 +26,7 @@ ExampleScene::ExampleScene()
     std::srand(1);
     float LO = -5.0;
     float HI = 5.0;
-    for(size_t i = 0; i < 20; i++) {
+    for(size_t i = 0; i < 10; i++) {
         auto tempmesh = std::make_shared<Ball>();
         float r1 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
         float r2 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
