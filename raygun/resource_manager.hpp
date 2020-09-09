@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "raygun/audio/sound.hpp"
+//#include "raygun/audio/sound.hpp"
 #include "raygun/entity.hpp"
 #include "raygun/gpu/shader.hpp"
 #include "raygun/material.hpp"
@@ -62,7 +62,7 @@ class ResourceManager {
 
     std::shared_ptr<ui::Font> loadFont(string_view name);
 
-    std::shared_ptr<audio::Sound> loadSound(string_view name);
+    // std::shared_ptr<audio::Sound> loadSound(string_view name);
 
     fs::path entityLoadPath(string_view name);
 
@@ -75,7 +75,7 @@ class ResourceManager {
 
     std::map<string, std::shared_ptr<ui::Font>> m_fontCache;
 
-    std::map<string, std::shared_ptr<audio::Sound>> m_soundCache;
+    // std::map<string, std::shared_ptr<audio::Sound>> m_soundCache;
 };
 
 using UniqueResourceManager = std::unique_ptr<ResourceManager>;

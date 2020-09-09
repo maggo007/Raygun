@@ -26,7 +26,7 @@ ExampleScene::ExampleScene()
     std::srand(1);
     float LO = -5.0;
     float HI = 5.0;
-    for(size_t i = 0; i < 10; i++) {
+    for(size_t i = 0; i < 5; i++) {
         auto tempmesh = std::make_shared<Ball>();
         float r1 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
         float r2 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
@@ -75,6 +75,19 @@ void ExampleScene::update(double)
 {
     camera->moveTo(m_ball->transform().position + CAMERA_OFFSET);
     camera->lookAt(m_ball->transform().position);
+
+    auto models = RG().resourceManager().models();
+    for(auto& model: models) {
+        if(model->mesh->vertices.size() == 3840) {
+            RAYGUN_DEBUG("updating ball vertices");
+            for(size_t i = 0; i < model->mesh->vertices.size(); i++) {
+                auto randvert = (rand() % 10) + 1;
+                if(i % randvert) {
+                    model->mesh->vertices[i].position += model->mesh->vertices[i].normal * vec3(0.01);
+                }
+            }
+        }
+    }
 
     // m_ball->update();
 }

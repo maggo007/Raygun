@@ -65,8 +65,8 @@ Raygun::Raygun(string_view title, UniqueConfig config)
 
     m_physicsSystem = std::make_unique<physics::PhysicsSystem>();
 
-    m_audioSystem = std::make_unique<audio::AudioSystem>();
-    m_audioSystem->setupDefaultSources();
+    // m_audioSystem = std::make_unique<audio::AudioSystem>();
+    // m_audioSystem->setupDefaultSources();
 
     loadScene(std::make_unique<Scene>());
 
@@ -239,14 +239,14 @@ physics::PhysicsSystem& Raygun::physicsSystem()
     return *m_physicsSystem;
 }
 
-audio::AudioSystem& Raygun::audioSystem()
-{
-    if(!m_audioSystem) {
-        RAYGUN_FATAL("Audio system not set");
-    }
+// audio::AudioSystem& Raygun::audioSystem()
+// {
+//     if(!m_audioSystem) {
+//         RAYGUN_FATAL("Audio system not set");
+//     }
 
-    return *m_audioSystem;
-}
+//     return *m_audioSystem;
+// }
 
 ResourceManager& Raygun::resourceManager()
 {

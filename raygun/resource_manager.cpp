@@ -134,11 +134,11 @@ std::shared_ptr<ui::Font> ResourceManager::loadFont(string_view nameView)
     return result;
 }
 
-std::shared_ptr<audio::Sound> ResourceManager::loadSound(string_view nameView)
-{
-    const auto name = string{nameView};
-    return loadFromFileSystemCached("Sound", name, fs::path{"sounds"} / (name + ".opus"), m_soundCache);
-}
+// std::shared_ptr<audio::Sound> ResourceManager::loadSound(string_view nameView)
+// {
+//     const auto name = string{nameView};
+//     return loadFromFileSystemCached("Sound", name, fs::path{"sounds"} / (name + ".opus"), m_soundCache);
+// }
 
 fs::path ResourceManager::entityLoadPath(string_view name)
 {

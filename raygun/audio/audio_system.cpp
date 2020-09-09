@@ -68,11 +68,11 @@ void AudioSystem::update()
     moveListener(scene.camera->transform());
 
     // Reposition audio sources
-    scene.root->forEachEntity([](const Entity& entity) {
-        if(entity.audioSource) {
-            entity.audioSource->move(entity.transform().position);
-        }
-    });
+    // scene.root->forEachEntity([](const Entity& entity) {
+    //     if(entity.audioSource) {
+    //         entity.audioSource->move(entity.transform().position);
+    //     }
+    // });
 }
 
 void AudioSystem::playSoundEffect(std::shared_ptr<Sound> sound, double gain, std::optional<vec3> position)

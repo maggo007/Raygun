@@ -122,7 +122,7 @@ class SelectableWidget : public Widget {
     bool selected = false;
     double timeSinceSelect = 0;
 
-    std::shared_ptr<audio::Sound> selectSound;
+    // std::shared_ptr<audio::Sound> selectSound;
 
   protected:
     SelectableWidget(string_view name);
@@ -147,7 +147,7 @@ class Button : public SelectableWidget {
     double timeSinceClick = 0;
     bool multiPress = false;
 
-    std::shared_ptr<audio::Sound> clickSound;
+    // std::shared_ptr<audio::Sound> clickSound;
 
     Button(const Factory& factory, string_view caption, const std::function<void()>& action, float minWidth);
 };

@@ -113,9 +113,9 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
     auto old_forceRebuildBLAS = m_forceRebuildBLAS;
     auto old_forceRebuildTLAS = m_forceRebuildTLAS;
     ImGui::Checkbox("Update BLAS", &m_updateBLAS);
-    ImGui::Checkbox("Force Rebuild of BLAS", &m_forceRebuildBLAS);
+    ImGui::Checkbox("Rebuild BLAS every frame (unchecking will reload scene)", &m_forceRebuildBLAS);
     ImGui::Checkbox("Update TLAS", &m_updateTLAS);
-    ImGui::Checkbox("Force Rebuild of TLAS", &m_forceRebuildTLAS);
+    ImGui::Checkbox("Rebuild TLAS every frame (unchecking will reload scene)", &m_forceRebuildTLAS);
     // force reload of scene to build AS with correct upgrade bit
     if((old_forceRebuildBLAS && !m_forceRebuildBLAS) || (old_forceRebuildTLAS && !m_forceRebuildTLAS)) {
         RG().loadScene(std::make_unique<ExampleScene>());

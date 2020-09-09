@@ -358,7 +358,7 @@ void SelectableWidget::doLayout(const Window& wnd)
 void SelectableWidget::select()
 {
     if(!selected) {
-        RG().audioSystem().playSoundEffect(selectSound);
+        // RG().audioSystem().playSoundEffect(selectSound);
     }
 
     selected = true;
@@ -387,7 +387,7 @@ bool SelectableWidget::runUI(double deltatime, input::Input input)
     return false;
 }
 
-SelectableWidget::SelectableWidget(string_view name) : Widget(name), selectSound(RG().resourceManager().loadSound("ui_button_select")) {}
+SelectableWidget::SelectableWidget(string_view name) : Widget(name) {}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////// Button
 
@@ -455,7 +455,6 @@ Button::Button(const Factory& factory, string_view caption, const std::function<
     : SelectableWidget("btn_" + string(caption))
     , factory(factory)
     , action(action)
-    , clickSound(RG().resourceManager().loadSound("ui_button_click"))
 {
     buildWidgetWithCaption(*this, factory, caption, minWidth, marker, false);
 }
@@ -496,7 +495,7 @@ bool Button::runUI(double deltatime, input::Input input)
     timeSinceClick += deltatime;
     if(isSelected()) {
         if(input.ok && timeSinceClick > UI_INTERACT_GRANULARITY) {
-            RG().audioSystem().playSoundEffect(clickSound);
+            // RG().audioSystem().playSoundEffect(clickSound);
             action();
             timeSinceClick = 0;
             consumed = true;

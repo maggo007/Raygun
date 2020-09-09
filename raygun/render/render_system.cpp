@@ -94,6 +94,10 @@ void RenderSystem::render(Scene& scene, bool reload)
         updateUniformBuffer(*scene.camera);
 
         if(!reload) {
+            updateModelBuffers();
+        }
+
+        if(!reload) {
             m_raytracer->setupBottomLevelAS(*m_commandBuffer);
         }
 

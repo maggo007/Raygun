@@ -50,16 +50,16 @@ Sound::Sound(string_view name, const fs::path& path) : m_name(name)
     }
 
     alGenBuffers(1, &m_buffer);
-    if(RG().audioSystem().getError() != AL_NO_ERROR) {
-        RAYGUN_FATAL("Unable to generate audio buffer");
-    }
+    // if(RG().audioSystem().getError() != AL_NO_ERROR) {
+    //     RAYGUN_FATAL("Unable to generate audio buffer");
+    // }
 
     const auto format = numChannels == 2 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
 
     alBufferData(m_buffer, format, buf.data(), (int)(buf.size() * sizeof(buf[0])), SAMPLE_RATE);
-    if(RG().audioSystem().getError() != AL_NO_ERROR) {
-        RAYGUN_FATAL("Unable to fill audio buffer");
-    }
+    // if(RG().audioSystem().getError() != AL_NO_ERROR) {
+    //     RAYGUN_FATAL("Unable to fill audio buffer");
+    // }
 }
 
 Sound::~Sound()

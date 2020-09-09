@@ -12,5 +12,5 @@ class Ball : public raygun::Entity {
     static constexpr double BUMP_SOUND_VELOCITY_CHANGE_THRESHOLD = 0.5f;
 
     raygun::vec3 m_previousVelocity = raygun::zero();
-    std::shared_ptr<raygun::audio::Sound> m_bumpSound;
+    // std::shared_ptr<raygun::audio::Sound> m_bumpSound;
 };

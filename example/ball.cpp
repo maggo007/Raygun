@@ -7,7 +7,7 @@ using namespace raygun;
 using namespace raygun::physics;
 using namespace physx;
 
-Ball::Ball() : Entity("Ball", RG().resourceManager().entityLoadPath("ball")), m_bumpSound(RG().resourceManager().loadSound("bonk"))
+Ball::Ball() : Entity("Ball", RG().resourceManager().entityLoadPath("ball"))
 {
     // On import, all entities contained within the loaded file are attached to
     // this entity as children. However, this entity represents just the ball,

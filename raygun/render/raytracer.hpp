@@ -82,7 +82,7 @@ struct Raytracer {
     gpu::UniqueBuffer m_sbtBuffer;
 
     bool m_useFXAA = true;
-    bool m_updateBLAS = false;
+    bool m_updateBLAS = true;
     bool m_forceRebuildBLAS = false;
     bool m_updateTLAS = true;
     bool m_forceRebuildTLAS = false;

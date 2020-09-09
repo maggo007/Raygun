@@ -76,7 +76,7 @@ class Raygun {
 
     physics::PhysicsSystem& physicsSystem();
 
-    audio::AudioSystem& audioSystem();
+    // audio::AudioSystem& audioSystem();
 
     ResourceManager& resourceManager();
 
@@ -109,7 +109,7 @@ class Raygun {
 
     physics::UniquePhysicsSystem m_physicsSystem;
 
-    audio::UniqueAudioSystem m_audioSystem;
+    // audio::UniqueAudioSystem m_audioSystem;
 
     UniqueResourceManager m_resourceManager;
 
