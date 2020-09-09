@@ -309,7 +309,10 @@ void Raygun::finalizeLoadScene()
     m_renderSystem->resetUniformBuffer();
 
     m_renderSystem->setupModelBuffers();
+    // moved to rendersystem
     // m_renderSystem->raytracer().setupBottomLevelAS();
+
+    m_renderSystem->raytracer().resetTLAS();
 
     m_timestamp = Clock::now();
 

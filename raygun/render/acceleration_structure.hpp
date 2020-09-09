@@ -33,7 +33,7 @@ namespace raygun::render {
 
 class TopLevelAS {
   public:
-    TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene);
+    TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
 
     operator vk::AccelerationStructureKHR() const { return *m_structure; }
 
@@ -62,7 +62,7 @@ using UniqueTopLevelAS = std::unique_ptr<TopLevelAS>;
 
 class BottomLevelAS {
   public:
-    BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh);
+    BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
 
     operator vk::AccelerationStructureKHR() const { return *m_structure; }
 

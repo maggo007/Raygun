@@ -32,6 +32,8 @@
 #include "resources/shaders/compute_shader_shared.def"
 #include "resources/shaders/raytracer_bindings.h"
 
+#include "example/example_scene.hpp"
+
 namespace raygun::render {
 
 Raytracer::Raytracer() : vc(RG().vc())
@@ -67,7 +69,9 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmd2)
     for(auto& model: models) {
         if(!model->bottomLevelAS || m_forceRebuildBLAS) {
             RAYGUN_DEBUG("Building BLAS from scratch");
-            model->bottomLevelAS = std::make_unique<BottomLevelAS>(cmd2, *model->mesh);
+            model->bottomLevelAS = std::make_unique<BottomLevelAS>(cmd2, *model->mesh,
+                                                                   m_forceRebuildBLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+                                                                                      : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
         }
         else {
             if(m_updateBLAS) {
@@ -89,7 +93,9 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 
     if(!m_topLevelAS || m_forceRebuildTLAS) {
         RAYGUN_DEBUG("Building TLAS from scratch");
-        m_topLevelAS = std::make_unique<TopLevelAS>(cmd, scene);
+        m_topLevelAS = std::make_unique<TopLevelAS>(cmd, scene,
+                                                    m_forceRebuildTLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+                                                                       : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
     }
     else {
         if(m_updateTLAS) {
@@ -104,10 +110,16 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 
 const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 {
+    auto old_forceREbauildBLAS = m_forceRebuildBLAS;
+    auto old_forceREbauildTLAS = m_forceRebuildTLAS;
     ImGui::Checkbox("Update BLAS", &m_updateBLAS);
     ImGui::Checkbox("Force Rebuild of BLAS", &m_forceRebuildBLAS);
     ImGui::Checkbox("Update TLAS", &m_updateTLAS);
     ImGui::Checkbox("Force Rebuild of TLAS", &m_forceRebuildTLAS);
+    // force reload of scene to build AS with correct upgrade bit
+    if((old_forceREbauildBLAS && !m_forceRebuildBLAS) || (old_forceREbauildTLAS && !m_forceRebuildTLAS)) {
+        RG().loadScene(std::make_unique<ExampleScene>());
+    }
 
     cmd.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, *m_pipeline);
 
@@ -191,6 +203,11 @@ void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::
 
     RG().computeSystem().updateDescriptors(
         uniformBuffer, {&*m_finalImage, &*m_baseImage, &*m_normalImage, &*m_roughImage, &*m_roughTransitions, &*m_roughColorsA, &*m_roughColorsB});
+}
+
+void Raytracer::resetTLAS()
+{
+    m_topLevelAS.reset();
 }
 
 void Raytracer::setupRaytracingImages()

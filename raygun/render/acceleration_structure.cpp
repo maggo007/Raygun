@@ -107,7 +107,7 @@ namespace {
 
 } // namespace
 
-TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
+TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::BuildAccelerationStructureFlagBitsKHR updatebit)
 {
     VulkanContext& vc = RG().vc();
 
@@ -153,7 +153,8 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
-        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        createInfo.setFlags(updatebit);
+
         createInfo.setMaxGeometryCount(1);
         createInfo.setPGeometryInfos(&geometryTypeInfo);
 
@@ -184,7 +185,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene)
         buildInfo.setDstAccelerationStructure(*m_structure);
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
-        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        buildInfo.setFlags(updatebit);
         buildInfo.setScratchData(m_scratch->address());
 
         vk::AccelerationStructureBuildOffsetInfoKHR offset = {};
@@ -289,7 +290,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
     m_descriptorInfo.setPAccelerationStructures(&*m_structure);
 }
 
-BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
+BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk::BuildAccelerationStructureFlagBitsKHR updatebit)
 {
     VulkanContext& vc = RG().vc();
 
@@ -304,7 +305,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
-        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        createInfo.setFlags(updatebit);
         createInfo.setMaxGeometryCount(1);
         createInfo.setPGeometryInfos(&geometryTypeInfo);
 
@@ -341,7 +342,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
 
         vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
         buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
-        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        buildInfo.setFlags(updatebit);
         buildInfo.setDstAccelerationStructure(*m_structure);
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);

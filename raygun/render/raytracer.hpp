@@ -45,6 +45,8 @@ struct Raytracer {
     void updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
                             const gpu::Buffer& materialBuffer);
 
+    void resetTLAS();
+
   private:
     void setupRaytracingImages();
 
