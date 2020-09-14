@@ -27,6 +27,8 @@
 #include "raygun/logging.hpp"
 #include "raygun/ui/ui.hpp"
 
+#include "example/example_scene.hpp"
+
 namespace raygun {
 
 static Raygun* instance;
@@ -102,7 +104,12 @@ void Raygun::loop()
         const auto input = m_inputSystem->handleEvents();
 
         const auto timeDelta = updateTimestamp();
-        if(m_advanceFrame) {
+
+        if(input.reload) {
+            RG().loadScene(std::make_unique<ExampleScene>());
+        }
+
+        if(m_advanceFrame && !input.reload) {
 
             m_profiler->startFrame();
 
@@ -130,7 +137,7 @@ void Raygun::loop()
 
             // m_audioSystem->update();
 
-            m_renderSystem->render(*m_scene, input.reload);
+            m_renderSystem->render(*m_scene);
         }
     }
 

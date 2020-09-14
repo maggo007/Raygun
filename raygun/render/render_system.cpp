@@ -85,7 +85,7 @@ void RenderSystem::preSimulation()
     m_imGuiRenderer->newFrame();
 }
 
-void RenderSystem::render(Scene& scene, bool reload)
+void RenderSystem::render(Scene& scene)
 {
     beginFrame();
     {
@@ -93,13 +93,9 @@ void RenderSystem::render(Scene& scene, bool reload)
 
         updateUniformBuffer(*scene.camera);
 
-        if(!reload) {
-            updateModelBuffers();
-        }
+        updateModelBuffers();
 
-        if(!reload) {
-            m_raytracer->setupBottomLevelAS(*m_commandBuffer);
-        }
+        m_raytracer->setupBottomLevelAS(*m_commandBuffer);
 
         m_raytracer->setupTopLevelAS(*m_commandBuffer, scene);
 
@@ -163,7 +159,6 @@ void RenderSystem::render(Scene& scene, bool reload)
     endFrame();
 
     RG().profiler().endFrame();
-
     presentFrame();
 
     vc.waitIdle();

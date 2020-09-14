@@ -49,7 +49,7 @@ class RenderSystem {
 
     void preSimulation();
 
-    void render(Scene& scene, bool reload);
+    void render(Scene& scene);
 
     void setupModelBuffers();
     void updateModelBuffers();

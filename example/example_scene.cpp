@@ -47,9 +47,10 @@ ExampleScene::ExampleScene()
 
 void ExampleScene::processInput(raygun::input::Input input, double timeDelta)
 {
-    if(input.reload) {
-        RG().loadScene(std::make_unique<ExampleScene>());
-    }
+    // moved up to prevent out of date acceleration structure
+    // if(input.reload) {
+    //     RG().loadScene(std::make_unique<ExampleScene>());
+    // }
 
     if(input.cancel) {
         showMenu();
@@ -76,10 +77,11 @@ void ExampleScene::update(double)
     camera->moveTo(m_ball->transform().position + CAMERA_OFFSET);
     camera->lookAt(m_ball->transform().position);
 
+    std::srand(1);
     auto models = RG().resourceManager().models();
     for(auto& model: models) {
         if(model->mesh->vertices.size() == 3840) {
-            RAYGUN_DEBUG("updating ball vertices");
+            // RAYGUN_DEBUG("updating ball vertices");
             for(size_t i = 0; i < model->mesh->vertices.size(); i++) {
                 auto randvert = (rand() % 10) + 1;
                 if(i % randvert) {
