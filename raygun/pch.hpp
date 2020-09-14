@@ -129,11 +129,11 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-#include <AL/al.h>
-#include <AL/alc.h>
+// #include <AL/al.h>
+// #include <AL/alc.h>
 
-#include <opus/opus_types.h>
-#include <opus/opusfile.h>
+// #include <opus/opus_types.h>
+// #include <opus/opusfile.h>
 
 //////////////////////////////////////////////////////////////////////////
 

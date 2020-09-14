@@ -32,8 +32,8 @@ add_subdirectory(vendor/glm)
 add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/imGuIZMO)
 add_subdirectory(vendor/json)
-add_subdirectory(vendor/OpenAL)
-add_subdirectory(vendor/opus)
+#add_subdirectory(vendor/OpenAL)
+#add_subdirectory(vendor/opus)
 add_subdirectory(vendor/PhysX)
 add_subdirectory(vendor/spdlog)
 
@@ -54,8 +54,8 @@ target_link_libraries(raygun PUBLIC
     imgui
     imGuIZMO
     json
-    opus
-    OpenAL
+ #   opus
+ #   OpenAL
     PhysX
     spdlog
 )
