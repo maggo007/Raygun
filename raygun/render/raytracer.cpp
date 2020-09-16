@@ -43,7 +43,7 @@ Raytracer::Raytracer() : vc(RG().vc())
 
     setupRaytracingDescriptorSet();
 
-    setupPostprocessing();
+    // setupPostprocessing();
 
     setupRaytracingImages();
 

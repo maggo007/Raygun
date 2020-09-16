@@ -56,16 +56,24 @@ Input InputSystem::handleEvents()
             RG().renderSystem().reload();
         }
 
+        if(pressed(GLFW_KEY_F8)) {
+            RG().stopMeshAnimation();
+        }
+
+        if(pressed(GLFW_KEY_F9)) {
+            RG().startMeshAnimation();
+        }
+
         if(pressed(GLFW_KEY_F10)) {
             RG().quit();
         }
 
-        if(pressed(GLFW_KEY_F12)) {
-            RG().addMesh();
-        }
-
         if(pressed(GLFW_KEY_F11)) {
             RG().resumeRendering();
+        }
+
+        if(pressed(GLFW_KEY_F12)) {
+            RG().pauseRendering();
         }
     }
 

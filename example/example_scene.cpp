@@ -77,19 +77,20 @@ void ExampleScene::update(double timedelta)
     camera->moveTo(m_ball->transform().position + CAMERA_OFFSET);
     camera->lookAt(m_ball->transform().position);
 
-    auto models = RG().resourceManager().models();
-    for(auto& model: models) {
-        if(model->mesh->vertices.size() == 3840) {
-            // RAYGUN_DEBUG("updating ball vertices");
-            for(size_t i = 0; i < model->mesh->vertices.size(); i++) {
-                auto randvert = (rand() % 10) + 1;
-                if(i % randvert) {
-                    model->mesh->vertices[i].position += model->mesh->vertices[i].normal * vec3(0.1 * timedelta);
+    if(RG().meshAnimation) {
+        auto models = RG().resourceManager().models();
+        for(auto& model: models) {
+            if(model->mesh->vertices.size() == 3840) {
+                // RAYGUN_DEBUG("updating ball vertices");
+                for(size_t i = 0; i < model->mesh->vertices.size(); i++) {
+                    auto randvert = (rand() % 10) + 1;
+                    if(i % randvert) {
+                        model->mesh->vertices[i].position += model->mesh->vertices[i].normal * vec3(0.1 * timedelta);
+                    }
                 }
             }
         }
     }
-
     // m_ball->update();
 }
 

@@ -58,6 +58,10 @@ class Raygun {
 
     void resumeRendering();
 
+    void stopMeshAnimation();
+
+    void startMeshAnimation();
+
     Config& config();
 
     glfw::Runtime& glfwRuntime();
@@ -86,6 +90,8 @@ class Raygun {
 
     /// Returns the active time passed since engine initialization.
     double time();
+
+    bool meshAnimation = false;
 
   private:
     // The order of these members is important as they dictate the sequence of

@@ -49,6 +49,8 @@ class Profiler {
 
     void doUI() const;
 
+    void outputLast();
+
   private:
     static constexpr uint32_t QUERY_BUFFER_FRAMES = 2;
     static constexpr uint32_t MAX_TIMESTAMP_QUERIES = (uint32_t)TimestampQueryID::Count;

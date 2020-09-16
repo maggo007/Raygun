@@ -161,4 +161,12 @@ void Profiler::incFrame()
     }
 }
 
+void Profiler::outputLast()
+{
+    RAYGUN_INFO("cputime= {}", cpuTimes[prevStatFrame()]);
+    RAYGUN_INFO("GPU BLAS time= {}", BLASBuildTimes[prevStatFrame()]);
+    RAYGUN_INFO("GPU TLAS time= {}", TLASBuildTimes[prevStatFrame()]);
+    RAYGUN_INFO("GPU RT time= {}", RTOnlyTimes[prevStatFrame()]);
+}
+
 } // namespace raygun

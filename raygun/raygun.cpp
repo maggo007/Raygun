@@ -109,7 +109,7 @@ void Raygun::loop()
             RG().loadScene(std::make_unique<ExampleScene>());
         }
 
-        if(m_advanceFrame && !input.reload) {
+        if(m_advanceFrame) {
 
             m_profiler->startFrame();
 
@@ -153,7 +153,10 @@ void Raygun::quit()
 
 void Raygun::pauseRendering()
 {
-    if(m_advanceFrame) RAYGUN_INFO("Stop rendering");
+    if(m_advanceFrame) {
+        RAYGUN_INFO("Stop rendering");
+        RG().profiler().outputLast();
+    }
 
     m_advanceFrame = false;
 }
@@ -163,6 +166,20 @@ void Raygun::resumeRendering()
     if(!m_advanceFrame) RAYGUN_INFO("Resume rendering");
 
     m_advanceFrame = true;
+}
+
+void Raygun::stopMeshAnimation()
+{
+    if(meshAnimation) RAYGUN_INFO("stopping MeshAnimation");
+
+    meshAnimation = false;
+}
+
+void Raygun::startMeshAnimation()
+{
+    if(!meshAnimation) RAYGUN_INFO("starting MeshAnimation");
+
+    meshAnimation = true;
 }
 
 Config& Raygun::config()
