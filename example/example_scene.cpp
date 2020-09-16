@@ -26,7 +26,7 @@ ExampleScene::ExampleScene()
     std::srand(1);
     float LO = -5.0;
     float HI = 5.0;
-    for(size_t i = 0; i < 5; i++) {
+    for(size_t i = 0; i < 1; i++) {
         auto tempmesh = std::make_shared<Ball>();
         float r1 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
         float r2 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
@@ -72,12 +72,11 @@ void ExampleScene::processInput(raygun::input::Input input, double timeDelta)
     m_ball->move(raygun::vec3(inputDir.x, inputDir.y, 0.0));
 }
 
-void ExampleScene::update(double)
+void ExampleScene::update(double timedelta)
 {
     camera->moveTo(m_ball->transform().position + CAMERA_OFFSET);
     camera->lookAt(m_ball->transform().position);
 
-    std::srand(1);
     auto models = RG().resourceManager().models();
     for(auto& model: models) {
         if(model->mesh->vertices.size() == 3840) {
@@ -85,7 +84,7 @@ void ExampleScene::update(double)
             for(size_t i = 0; i < model->mesh->vertices.size(); i++) {
                 auto randvert = (rand() % 10) + 1;
                 if(i % randvert) {
-                    model->mesh->vertices[i].position += model->mesh->vertices[i].normal * vec3(0.01);
+                    model->mesh->vertices[i].position += model->mesh->vertices[i].normal * vec3(0.1 * timedelta);
                 }
             }
         }

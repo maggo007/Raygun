@@ -100,6 +100,7 @@ namespace {
             scratch =
                 std::make_unique<gpu::Buffer>(memoryRequirements.size, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                                               vk::MemoryPropertyFlagBits::eDeviceLocal);
+            // RAYGUN_DEBUG("Scratch memory{}", memoryRequirements.size);
         }
 
         return {std::move(structure), std::move(memory), std::move(scratch)};
@@ -230,30 +231,42 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         return true;
     });
 
+    // RAYGUN_DEBUG("m_instances before size= {}", m_instances->size());
+
+    int instancesize = m_instances->size();
+    bool rebuild = false;
+
     m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
     m_instances->setName("Instances");
+
+    // Rebuild if instances are getting bigger
+    if(instancesize != m_instances->size()) {
+        rebuild = true;
+    }
+
+    // RAYGUN_DEBUG("m_instances after size= {}", m_instances->size());
 
     m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
     m_instanceOffsetTable->setName("Instance Offset Table");
 
     // setup not needed for update
-    // {
-    //     vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-    //     geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
-    //     geometryTypeInfo.setMaxPrimitiveCount((uint32_t)instances.size());
+    if(rebuild) {
+        vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+        geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
+        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)instances.size());
 
-    //     vk::AccelerationStructureCreateInfoKHR createInfo = {};
-    //     createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
-    //     createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
-    //     createInfo.setMaxGeometryCount(1);
-    //     createInfo.setPGeometryInfos(&geometryTypeInfo);
+        vk::AccelerationStructureCreateInfoKHR createInfo = {};
+        createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+        createInfo.setMaxGeometryCount(1);
+        createInfo.setPGeometryInfos(&geometryTypeInfo);
 
-    //     std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
 
-    //     vc.setObjectName(*m_structure, "TLAS Structure");
-    //     vc.setObjectName(*m_memory, "TLAS Memory");
-    //     m_scratch->setName("TLAS Scratch");
-    // }
+        vc.setObjectName(*m_structure, "TLAS Structure");
+        vc.setObjectName(*m_memory, "TLAS Memory");
+        m_scratch->setName("TLAS Scratch");
+    }
 
     // build
     {
@@ -277,7 +290,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
-        buildInfo.setUpdate(true);
+        if(!rebuild) buildInfo.setUpdate(true);
         buildInfo.setScratchData(m_scratch->address());
 
         vk::AccelerationStructureBuildOffsetInfoKHR offset = {};
