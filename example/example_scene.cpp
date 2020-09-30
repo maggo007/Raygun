@@ -32,7 +32,7 @@ ExampleScene::ExampleScene()
         float r2 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
         float r3 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
         tempmesh->moveTo(vec3(r1, r2, r3));
-        m_ballVector.emplace_back(tempmesh);
+        m_ballVector.push_back(tempmesh);
         root->addChild(tempmesh);
     }
 
@@ -114,4 +114,16 @@ void ExampleScene::showMenu()
     // camera->addChild(ui::uiTestWindow(*m_uiFactory));
 }
 
-void ExampleScene::addMesh() {}
+void ExampleScene::addMesh()
+{
+    float LO = -5.0;
+    float HI = 5.0;
+
+    auto tempmesh = std::make_shared<Ball>();
+    float r1 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+    float r2 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+    float r3 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+    tempmesh->moveTo(vec3(r1, r2, r3));
+    m_ballVector.push_back(tempmesh);
+    root->addChild(tempmesh);
+}

@@ -98,6 +98,8 @@ class RenderSystem {
 
     std::unique_ptr<Fade> m_currentFade;
 
+    std::size_t m_modelNumbers = 0;
+
     void updateUniformBuffer(const Camera& camera);
     void updateVertexAndIndexBuffer(std::set<Mesh*>& meshes);
     void updateMaterialBuffer(std::vector<Model*>& models);

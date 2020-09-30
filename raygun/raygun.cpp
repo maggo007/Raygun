@@ -315,8 +315,10 @@ double Raygun::updateTimestamp()
 
 void Raygun::addMesh()
 {
-    // does nothing at the moment
-    RG().scene().addMesh();
+    if(!m_addmesh) {
+        RG().scene().addMesh();
+        // m_addmesh = true;
+    }
 }
 
 void Raygun::finalizeLoadScene()

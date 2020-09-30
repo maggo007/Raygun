@@ -221,12 +221,20 @@ void RenderSystem::setupModelBuffers()
     updateVertexAndIndexBuffer(meshes);
 
     updateMaterialBuffer(models);
+
+    m_modelNumbers = models.size();
 }
 
 void RenderSystem::updateModelBuffers()
 {
     auto models = RG().resourceManager().models();
     auto meshes = distinctMeshes(models);
+
+    // rebuild vertex buffer on model load
+    if(m_modelNumbers != models.size()) {
+        setupModelBuffers();
+        return;
+    }
 
     updateVertexAndIndexBuffer(meshes);
 

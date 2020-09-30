@@ -46,6 +46,10 @@ Input InputSystem::handleEvents()
 
     // developer bindings
     {
+        if(pressed(GLFW_KEY_F2)) {
+            RG().addMesh();
+        }
+
         if(pressed(GLFW_KEY_F5)) {
             input.reload = true;
         }

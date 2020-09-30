@@ -233,13 +233,13 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
 
     // RAYGUN_DEBUG("m_instances before size= {}", m_instances->size());
 
-    int instancesize = m_instances->size();
+    auto instancesize = m_instances->size();
     bool rebuild = false;
 
     m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
     m_instances->setName("Instances");
 
-    // Rebuild if instances are getting bigger
+    // Rebuild if instances are not the same anymore
     if(instancesize != m_instances->size()) {
         rebuild = true;
     }
@@ -249,7 +249,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
     m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
     m_instanceOffsetTable->setName("Instance Offset Table");
 
-    // setup not needed for update
+    // setup not needed for update except for instancenumber changes
     if(rebuild) {
         vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
         geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);

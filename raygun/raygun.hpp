@@ -126,6 +126,8 @@ class Raygun {
 
     bool m_advanceFrame = true;
 
+    bool m_addmesh = false;
+
     Clock::duration m_time = Clock::duration::zero();
 
     Clock::time_point m_timestamp = Clock::now();
