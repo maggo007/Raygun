@@ -23,6 +23,8 @@
 #pragma once
 
 //#include "raygun/audio/sound.hpp"
+#include "example/aabb.hpp"
+#include "example/sphere.hpp"
 #include "raygun/entity.hpp"
 #include "raygun/gpu/shader.hpp"
 #include "raygun/material.hpp"
@@ -66,6 +68,14 @@ class ResourceManager {
 
     fs::path entityLoadPath(string_view name);
 
+    void setSpheres(std::vector<std::shared_ptr<Sphere>> spheres);
+
+    std::vector<std::shared_ptr<Sphere>> spheres();
+
+    void setAabbs(std::vector<std::shared_ptr<Aabb>> aabbs);
+
+    std::vector<std::shared_ptr<Aabb>> aabb();
+
   private:
     std::set<std::shared_ptr<render::Model>> m_loadedModels;
 
@@ -76,6 +86,10 @@ class ResourceManager {
     std::map<string, std::shared_ptr<ui::Font>> m_fontCache;
 
     // std::map<string, std::shared_ptr<audio::Sound>> m_soundCache;
+
+    std::vector<std::shared_ptr<Sphere>> m_spheres;
+
+    std::vector<std::shared_ptr<Aabb>> m_aabb;
 };
 
 using UniqueResourceManager = std::unique_ptr<ResourceManager>;

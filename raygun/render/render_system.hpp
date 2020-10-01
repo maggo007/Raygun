@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "example/example_scene.hpp"
+#include "example/sphere.hpp"
 #include "raygun/assert.hpp"
 #include "raygun/camera.hpp"
 #include "raygun/compute/compute_system.hpp"
@@ -54,6 +56,8 @@ class RenderSystem {
     void setupModelBuffers();
     void updateModelBuffers();
 
+    void setupProceduralBuffers();
+
     vk::RenderPass& renderPass() { return *m_renderPass; }
 
     Swapchain& swapchain() { return *m_swapchain; }
@@ -69,6 +73,9 @@ class RenderSystem {
             m_currentFade = std::make_unique<F>(std::forward<Args>(args)...);
         }
     }
+
+    gpu::UniqueBuffer m_spheresBuffer;
+    gpu::UniqueBuffer m_spheresAabbBuffer;
 
   private:
     static constexpr vk::SampleCountFlagBits SAMPLES = vk::SampleCountFlagBits::e1;

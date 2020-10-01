@@ -335,6 +335,8 @@ void Raygun::finalizeLoadScene()
     m_renderSystem->resetUniformBuffer();
 
     m_renderSystem->setupModelBuffers();
+
+    m_renderSystem->setupProceduralBuffers();
     // moved to rendersystem
     // m_renderSystem->raytracer().setupBottomLevelAS();
 

@@ -43,6 +43,26 @@ ExampleScene::ExampleScene()
     // setup ui stuff
     const auto font = RG().resourceManager().loadFont("NotoSans");
     m_uiFactory = std::make_unique<ui::Factory>(font);
+
+    // add procedural spheres https://nvpro-samples.github.io/vk_raytracing_tutorial/vkrt_tuto_intersection.md.html
+
+    for(uint32_t i = 0; i < 1; i++) {
+        auto s = std::make_shared<Sphere>();
+        s->center = vec3(0.5f, 0.5f, 0.5f);
+        s->radius = 1.2f;
+        m_spheres.push_back(s);
+    }
+
+    // Axis-aligned bounding box of each sphere
+    for(const auto& s: m_spheres) {
+        auto aabb = std::make_shared<Aabb>();
+        aabb->minimum = s->center - vec3(s->radius);
+        aabb->maximum = s->center + vec3(s->radius);
+        m_aabb.push_back(aabb);
+    }
+
+    RG().resourceManager().setSpheres(m_spheres);
+    RG().resourceManager().setAabbs(m_aabb);
 }
 
 void ExampleScene::processInput(raygun::input::Input input, double timeDelta)

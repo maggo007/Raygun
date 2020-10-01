@@ -145,4 +145,24 @@ fs::path ResourceManager::entityLoadPath(string_view name)
     return RESOURCES_DIR / "models" / (string{name} + ".dae");
 }
 
+void ResourceManager::setSpheres(std::vector<std::shared_ptr<Sphere>> spheres)
+{
+    m_spheres = spheres;
+}
+
+std::vector<std::shared_ptr<Sphere>> ResourceManager::spheres()
+{
+    return m_spheres;
+}
+
+void ResourceManager::setAabbs(std::vector<std::shared_ptr<Aabb>> aabbs)
+{
+    m_aabb = aabbs;
+}
+
+std::vector<std::shared_ptr<Aabb>> ResourceManager::aabb()
+{
+    return m_aabb;
+}
+
 } // namespace raygun

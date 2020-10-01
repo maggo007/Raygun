@@ -22,6 +22,7 @@
 
 #include "raygun/render/render_system.hpp"
 
+#include "example/sphere.hpp"
 #include "raygun/gpu/gpu_material.hpp"
 #include "raygun/gpu/gpu_utils.hpp"
 #include "raygun/logging.hpp"
@@ -439,6 +440,23 @@ void RenderSystem::setupRenderPass()
 
     m_renderPass = vc.device->createRenderPassUnique(info);
     vc.setObjectName(*m_renderPass, "Render System");
+}
+
+void RenderSystem::setupProceduralBuffers()
+{
+    auto spheres = RG().resourceManager().spheres();
+    m_spheresBuffer =
+        std::make_unique<gpu::Buffer>(spheres.size() * sizeof(Sphere), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    m_spheresBuffer->setName("Sphere Buffer");
+
+    auto aabbs = RG().resourceManager().aabb();
+    m_spheresAabbBuffer =
+        std::make_unique<gpu::Buffer>(aabbs.size() * sizeof(Aabb), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+    m_spheresAabbBuffer->setName("Sphere AABB Buffer");
 }
 
 } // namespace raygun::render

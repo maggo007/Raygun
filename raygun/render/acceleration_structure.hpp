@@ -22,12 +22,13 @@
 
 #pragma once
 
+#include "example/sphere.hpp"
 #include "raygun/gpu/gpu_buffer.hpp"
 #include "raygun/render/mesh.hpp"
 
 namespace raygun {
 struct Scene;
-}
+} // namespace raygun
 
 namespace raygun::render {
 
@@ -63,6 +64,8 @@ using UniqueTopLevelAS = std::unique_ptr<TopLevelAS>;
 class BottomLevelAS {
   public:
     BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
+
+    BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
 
     operator vk::AccelerationStructureKHR() const { return *m_structure; }
 

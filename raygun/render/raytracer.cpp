@@ -79,6 +79,10 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmd2)
             }
         }
     }
+    // only one structure at the moment
+    m_procBotLevel = std::make_unique<BottomLevelAS>(cmd2, Sphere(),
+                                                     m_forceRebuildBLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+                                                                        : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
 
     // cmd->end();
     // vc.computeQueue->submit(*cmd, *fence);

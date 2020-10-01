@@ -47,6 +47,8 @@ struct Raytracer {
 
     void resetTLAS();
 
+    UniqueBottomLevelAS m_procBotLevel;
+
   private:
     void setupRaytracingImages();
 
@@ -86,6 +88,7 @@ struct Raytracer {
     bool m_forceRebuildBLAS = false;
     bool m_updateTLAS = true;
     bool m_forceRebuildTLAS = false;
+
     compute::UniqueComputePass m_postprocess;
     compute::UniqueComputePass m_fxaa;
 
