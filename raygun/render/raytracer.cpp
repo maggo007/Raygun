@@ -80,10 +80,16 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmd2)
         }
     }
     // only one structure at the moment
-    m_procBotLevel = std::make_unique<BottomLevelAS>(cmd2, Sphere(),
-                                                     m_forceRebuildBLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
-                                                                        : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
-
+    if(!m_procBotLevel || m_forceRebuildBLAS) {
+        m_procBotLevel = std::make_unique<BottomLevelAS>(cmd2, Sphere(),
+                                                         m_forceRebuildBLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+                                                                            : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+    }
+    else {
+        if(m_updateBLAS) {
+            m_procBotLevel->updateBLAS(cmd2, Sphere());
+        }
+    }
     // cmd->end();
     // vc.computeQueue->submit(*cmd, *fence);
     // vc.waitForFence(*fence);
@@ -186,7 +192,7 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 }
 
 void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
-                                   const gpu::Buffer& materialBuffer)
+                                   const gpu::Buffer& materialBuffer, const gpu::Buffer& sphereBuffer)
 {
     // Bind acceleration structure
     m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_ACCELERATION_STRUCTURE, *m_topLevelAS);
@@ -202,6 +208,7 @@ void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::
     m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_INDEX_BUFFER, indexBuffer);
     m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_MATERIAL_BUFFER, materialBuffer);
     m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, m_topLevelAS->instanceOffsetTable());
+    m_descriptorSet.bind(RAYGUN_RAYTRACER_BINDING_SPHERE_BUFFER, sphereBuffer);
 
     m_descriptorSet.update();
 
@@ -257,6 +264,9 @@ void Raytracer::setupRaytracingDescriptorSet()
 
     m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, 1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eClosestHitKHR);
 
+    m_descriptorSet.addBinding(RAYGUN_RAYTRACER_BINDING_SPHERE_BUFFER, 1, vk::DescriptorType::eStorageBuffer,
+                               vk::ShaderStageFlagBits::eClosestHitKHR | vk::ShaderStageFlagBits::eIntersectionKHR);
+
     m_descriptorSet.generate();
 }
 
@@ -310,6 +320,28 @@ namespace {
         return info;
     }
 
+    vk::RayTracingShaderGroupCreateInfoKHR closestHitShaderGroupInfo2(uint32_t index)
+    {
+        vk::RayTracingShaderGroupCreateInfoKHR info = {vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup};
+        info.setGeneralShader(VK_SHADER_UNUSED_KHR);
+        info.setClosestHitShader(index);
+        info.setAnyHitShader(VK_SHADER_UNUSED_KHR);
+        info.setIntersectionShader(VK_SHADER_UNUSED_KHR);
+
+        return info;
+    }
+
+    vk::RayTracingShaderGroupCreateInfoKHR intersectionShaderGroupInfo(uint32_t intersectionShaderIndex)
+    {
+        vk::RayTracingShaderGroupCreateInfoKHR info = {vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup};
+        info.setGeneralShader(VK_SHADER_UNUSED_KHR);
+        info.setClosestHitShader(VK_SHADER_UNUSED_KHR);
+        info.setAnyHitShader(VK_SHADER_UNUSED_KHR);
+        info.setIntersectionShader(intersectionShaderIndex);
+
+        return info;
+    }
+
 } // namespace
 
 void Raytracer::setupRaytracingPipeline()
@@ -350,12 +382,32 @@ void Raytracer::setupRaytracingPipeline()
         groups.push_back(closestHitShaderGroupInfo((uint32_t)groups.size()));
     }
 
+    // hit group spheres
+    const auto closestHitShader2 = RG().resourceManager().loadShader("closesthit2.rchit");
+    {
+        m_hitSbt2.setOffset(groups.size() * sbtStride);
+
+        stages.push_back(closestHitShader2->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitKHR));
+        groups.push_back(closestHitShaderGroupInfo2((uint32_t)groups.size()));
+    }
+
+    // intersection group set one group with hit and intersection
+    const auto intersectionShader = RG().resourceManager().loadShader("intersection.rint");
+    {
+        m_intSbt.setOffset(groups.size() * sbtStride);
+
+        stages.push_back(intersectionShader->shaderStageInfo(vk::ShaderStageFlagBits::eIntersectionKHR));
+        groups.push_back(intersectionShaderGroupInfo((uint32_t)groups.size()));
+    }
+
     const auto sbtSize = groups.size() * sbtStride;
 
     m_raygenSbt.setStride(sbtStride).setSize(sbtSize);
     m_missSbt.setStride(sbtStride).setSize(sbtSize);
     m_hitSbt.setStride(sbtStride).setSize(sbtSize);
+    m_hitSbt2.setStride(sbtStride).setSize(sbtSize);
     m_callableSbt.setStride(sbtStride).setSize(sbtSize);
+    m_intSbt.setStride(sbtStride).setSize(sbtSize);
 
     {
         vk::PipelineLayoutCreateInfo info = {};
@@ -409,6 +461,7 @@ void Raytracer::setupShaderBindingTable()
     m_raygenSbt.setBuffer(*m_sbtBuffer);
     m_missSbt.setBuffer(*m_sbtBuffer);
     m_hitSbt.setBuffer(*m_sbtBuffer);
+    m_hitSbt2.setBuffer(*m_sbtBuffer);
     m_callableSbt.setBuffer(*m_sbtBuffer);
 }
 

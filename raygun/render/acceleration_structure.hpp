@@ -71,6 +71,8 @@ class BottomLevelAS {
 
     void updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh);
 
+    void updateBLAS(const vk::CommandBuffer& cmd, const Sphere& sphere);
+
   private:
     vk::UniqueAccelerationStructureKHR m_structure;
     vk::UniqueDeviceMemory m_memory;

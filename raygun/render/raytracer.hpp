@@ -43,7 +43,7 @@ struct Raytracer {
     const gpu::Image& doRaytracing(vk::CommandBuffer& cmd);
 
     void updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::Buffer& vertexBuffer, const gpu::Buffer& indexBuffer,
-                            const gpu::Buffer& materialBuffer);
+                            const gpu::Buffer& materialBuffer, const gpu::Buffer& sphereBuffer);
 
     void resetTLAS();
 
@@ -76,6 +76,8 @@ struct Raytracer {
     vk::StridedBufferRegionKHR m_raygenSbt;
     vk::StridedBufferRegionKHR m_missSbt;
     vk::StridedBufferRegionKHR m_hitSbt;
+    vk::StridedBufferRegionKHR m_hitSbt2;
+    vk::StridedBufferRegionKHR m_intSbt;
     vk::StridedBufferRegionKHR m_callableSbt;
 
     vk::UniquePipeline m_pipeline;

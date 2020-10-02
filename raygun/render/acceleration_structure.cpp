@@ -243,6 +243,23 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         return true;
     });
 
+    // adding sphere blas
+    vk::AccelerationStructureInstanceKHR instance = {};
+    instance.setInstanceCustomIndex((uint32_t)instances.size());
+    instance.setMask(0xff);
+    instance.setInstanceShaderBindingTableRecordOffset(1);
+
+    const auto blasAddress = vc.device->getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*RG().renderSystem().raytracer().m_procBotLevel)});
+    instance.setAccelerationStructureReference(blasAddress);
+
+    instances.push_back(instance);
+
+    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instances->setName("Instances");
+
+    m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instanceOffsetTable->setName("Instance Offset Table");
+
     // RAYGUN_DEBUG("m_instances before size= {}", m_instances->size());
 
     auto instancesize = m_instances->size();
@@ -505,6 +522,69 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere,
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setScratchData(m_scratch->address());
+
+        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
+    }
+}
+
+void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Sphere& sphere)
+{
+    VulkanContext& vc = RG().vc();
+
+    // setup
+    // {
+    //     vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+    //     geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eAabbs);
+    //     geometryTypeInfo.setMaxPrimitiveCount((uint32_t)sizeof(Sphere));
+    //     geometryTypeInfo.setIndexType(vk::IndexType::eNoneKHR);
+    //     geometryTypeInfo.setVertexFormat(vk::Format::eUndefined);
+    //     geometryTypeInfo.setAllowsTransforms(VK_FALSE);
+
+    //     vk::AccelerationStructureCreateInfoKHR createInfo = {};
+    //     createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+    //     createInfo.setFlags(updatebit);
+    //     createInfo.setMaxGeometryCount(1);
+    //     createInfo.setPGeometryInfos(&geometryTypeInfo);
+
+    //     std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+
+    //     vc.setObjectName(*m_structure, "BLAS Structure");
+    //     vc.setObjectName(*m_memory, "BLAS Memory");
+    //     m_scratch->setName("BLAS Scratch");
+    // }
+
+    // build
+    {
+        vk::AccelerationStructureGeometryAabbsDataKHR aabbs = {};
+        aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
+        aabbs.setStride(sizeof(Aabb));
+
+        vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
+        offsetInfo.setFirstVertex(0);
+        offsetInfo.setPrimitiveCount((uint32_t)sizeof(Sphere));
+        offsetInfo.setPrimitiveOffset(0);
+        offsetInfo.setTransformOffset(0);
+
+        vk::AccelerationStructureGeometryDataKHR geometryData = {};
+        geometryData.setAabbs(aabbs);
+
+        std::array<vk::AccelerationStructureGeometryKHR, 1> geometries;
+        geometries[0].setGeometry(geometryData);
+        geometries[0].setGeometryType(vk::GeometryTypeKHR::eAabbs);
+        geometries[0].setFlags(vk::GeometryFlagBitsKHR::eOpaque);
+
+        const auto pGeometires = geometries.data();
+
+        vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
+        buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+        buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        buildInfo.setDstAccelerationStructure(*m_structure);
+        buildInfo.setGeometryCount((uint32_t)geometries.size());
+        buildInfo.setPpGeometries(&pGeometires);
+        buildInfo.setScratchData(m_scratch->address());
+        buildInfo.setUpdate(true);
+        buildInfo.setSrcAccelerationStructure(*m_structure);
+        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
 
         cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
     }

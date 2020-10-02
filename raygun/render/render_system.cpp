@@ -100,7 +100,7 @@ void RenderSystem::render(Scene& scene)
 
         m_raytracer->setupTopLevelAS(*m_commandBuffer, scene);
 
-        m_raytracer->updateRenderTarget(*m_uniformBuffer, *m_vertexBuffer, *m_indexBuffer, *m_materialBuffer);
+        m_raytracer->updateRenderTarget(*m_uniformBuffer, *m_vertexBuffer, *m_indexBuffer, *m_materialBuffer, *m_spheresBuffer);
 
         const auto& raytracerResultImage = m_raytracer->doRaytracing(*m_commandBuffer);
 
