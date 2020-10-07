@@ -48,8 +48,8 @@ ExampleScene::ExampleScene()
 
     for(uint32_t i = 0; i < 1; i++) {
         auto s = std::make_shared<Sphere>();
-        s->center = vec3(0.5f, 0.5f, 0.5f);
-        s->radius = 1.2f;
+        s->center = vec3(3.0f, 3.0f, -3.0f);
+        s->radius = 20.2f;
         m_spheres.push_back(s);
     }
 

@@ -457,6 +457,39 @@ void RenderSystem::setupProceduralBuffers()
                                       vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
     m_spheresAabbBuffer->setName("Sphere AABB Buffer");
+
+    updateProceduralBuffers();
+}
+
+void RenderSystem::updateProceduralBuffers()
+{
+    auto spheres = RG().resourceManager().spheres();
+
+    const auto sphereStart = static_cast<uint8_t*>(m_spheresBuffer->map());
+    uint32_t sphereOffset = 0;
+
+    for(const auto& sphere: spheres) {
+        const auto sphereSize = (uint32_t)(sizeof(Sphere));
+
+        memcpy(sphereStart + sphereOffset, sphere.get(), sphereSize);
+
+        sphereOffset += sphereSize;
+    }
+
+    auto aabbs = RG().resourceManager().aabb();
+
+    const auto aabbStart = static_cast<uint8_t*>(m_spheresAabbBuffer->map());
+    uint32_t aabbOffset = 0;
+
+    for(const auto& aabb: aabbs) {
+        const auto aabbSize = (uint32_t)(sizeof(Aabb));
+
+        memcpy(aabbStart + aabbOffset, aabb.get(), aabbSize);
+
+        aabbOffset += aabbSize;
+    }
+
+    m_vertexBuffer->unmap();
 }
 
 } // namespace raygun::render

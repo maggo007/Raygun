@@ -110,6 +110,7 @@ class RenderSystem {
     void updateUniformBuffer(const Camera& camera);
     void updateVertexAndIndexBuffer(std::set<Mesh*>& meshes);
     void updateMaterialBuffer(std::vector<Model*>& models);
+    void updateProceduralBuffers();
 
     void beginFrame();
     void endFrame(std::vector<vk::Semaphore> waitSemaphores = {});

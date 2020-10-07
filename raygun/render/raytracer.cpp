@@ -219,6 +219,7 @@ void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::
 void Raytracer::resetTLAS()
 {
     m_topLevelAS.reset();
+    m_procBotLevel.reset();
 }
 
 void Raytracer::setupRaytracingImages()
@@ -342,6 +343,17 @@ namespace {
         return info;
     }
 
+    vk::RayTracingShaderGroupCreateInfoKHR combinedShaderGroupInfo(uint32_t combinedShaderIndex)
+    {
+        vk::RayTracingShaderGroupCreateInfoKHR info = {vk::RayTracingShaderGroupTypeKHR::eProceduralHitGroup};
+        info.setGeneralShader(VK_SHADER_UNUSED_KHR);
+        info.setClosestHitShader(combinedShaderIndex);
+        info.setAnyHitShader(VK_SHADER_UNUSED_KHR);
+        info.setIntersectionShader(combinedShaderIndex + 1);
+
+        return info;
+    }
+
 } // namespace
 
 void Raytracer::setupRaytracingPipeline()
@@ -382,13 +394,13 @@ void Raytracer::setupRaytracingPipeline()
         groups.push_back(closestHitShaderGroupInfo((uint32_t)groups.size()));
     }
 
-    // hit group spheres
+    // hit group spheres combined group index with intersection shader
     const auto closestHitShader2 = RG().resourceManager().loadShader("closesthit2.rchit");
     {
         m_hitSbt2.setOffset(groups.size() * sbtStride);
 
         stages.push_back(closestHitShader2->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitKHR));
-        groups.push_back(closestHitShaderGroupInfo2((uint32_t)groups.size()));
+        // groups.push_back(closestHitShaderGroupInfo2((uint32_t)groups.size()));
     }
 
     // intersection group set one group with hit and intersection
@@ -397,7 +409,7 @@ void Raytracer::setupRaytracingPipeline()
         m_intSbt.setOffset(groups.size() * sbtStride);
 
         stages.push_back(intersectionShader->shaderStageInfo(vk::ShaderStageFlagBits::eIntersectionKHR));
-        groups.push_back(intersectionShaderGroupInfo((uint32_t)groups.size()));
+        groups.push_back(combinedShaderGroupInfo((uint32_t)groups.size()));
     }
 
     const auto sbtSize = groups.size() * sbtStride;
@@ -463,6 +475,7 @@ void Raytracer::setupShaderBindingTable()
     m_hitSbt.setBuffer(*m_sbtBuffer);
     m_hitSbt2.setBuffer(*m_sbtBuffer);
     m_callableSbt.setBuffer(*m_sbtBuffer);
+    m_intSbt.setBuffer(*m_sbtBuffer);
 }
 
 void Raytracer::setupPostprocessing()

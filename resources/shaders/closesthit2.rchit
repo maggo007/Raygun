@@ -66,10 +66,14 @@ layout(binding = RAYGUN_RAYTRACER_BINDING_INSTANCE_OFFSET_TABLE, set = 0) buffer
 }
 instanceOffsetTable;
 
-layout(binding = RAYGUN_RAYTRACER_BINDING_SPHERE_BUFFER, set = 1, scalar) buffer allSpheres_
+layout(binding = RAYGUN_RAYTRACER_BINDING_SPHERE_BUFFER, set = 0, scalar) buffer allSpheres_
 {
     Sphere i[];
 }
 allSpheres;
 
-void main() {}
+void main()
+{
+    payload.hitValue = vec3(0.8, 0.0, 0.8);
+    payload.depth = gl_HitTEXT;
+}

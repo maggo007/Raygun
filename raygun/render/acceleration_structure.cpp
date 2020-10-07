@@ -40,6 +40,7 @@ namespace {
         instance.setInstanceCustomIndex(instanceId);
         instance.setMask(0xff);
         instance.setFlags(vk::GeometryInstanceFlagBitsKHR::eTriangleCullDisable);
+        // instance.setInstanceShaderBindingTableRecordOffset(instanceId % 2);
 
         // 3x4 row-major affine transformation matrix.
         const auto transform = glm::transpose(entity.globalTransform().toMat4());
@@ -243,7 +244,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         return true;
     });
 
-    // adding sphere blas
+    // adding one sphere blas
     vk::AccelerationStructureInstanceKHR instance = {};
     instance.setInstanceCustomIndex((uint32_t)instances.size());
     instance.setMask(0xff);
@@ -475,10 +476,11 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere,
     {
         vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
         geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eAabbs);
-        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)sizeof(Sphere));
+        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)1);
         geometryTypeInfo.setIndexType(vk::IndexType::eNoneKHR);
         geometryTypeInfo.setVertexFormat(vk::Format::eUndefined);
         geometryTypeInfo.setAllowsTransforms(VK_FALSE);
+        geometryTypeInfo.setMaxVertexCount(0);
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
@@ -491,17 +493,16 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere,
         vc.setObjectName(*m_structure, "BLAS Structure");
         vc.setObjectName(*m_memory, "BLAS Memory");
         m_scratch->setName("BLAS Scratch");
-    }
 
-    // build
-    {
+        // build
+
         vk::AccelerationStructureGeometryAabbsDataKHR aabbs = {};
         aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
         aabbs.setStride(sizeof(Aabb));
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
         offsetInfo.setFirstVertex(0);
-        offsetInfo.setPrimitiveCount((uint32_t)sizeof(Sphere));
+        offsetInfo.setPrimitiveCount(1);
         offsetInfo.setPrimitiveOffset(0);
         offsetInfo.setTransformOffset(0);
 
@@ -561,7 +562,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Sphere& spher
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
         offsetInfo.setFirstVertex(0);
-        offsetInfo.setPrimitiveCount((uint32_t)sizeof(Sphere));
+        offsetInfo.setPrimitiveCount(1);
         offsetInfo.setPrimitiveOffset(0);
         offsetInfo.setTransformOffset(0);
 
