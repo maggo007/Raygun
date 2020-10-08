@@ -45,16 +45,18 @@ ExampleScene::ExampleScene()
     m_uiFactory = std::make_unique<ui::Factory>(font);
 
     // add procedural spheres https://nvpro-samples.github.io/vk_raytracing_tutorial/vkrt_tuto_intersection.md.html
-
+    float LO2 = 0.1;
+    float HI2 = 4.0;
     for(uint32_t i = 0; i < 10; i++) {
         auto procmodel = std::make_shared<render::ProcModel>();
         auto s = std::make_shared<Sphere>();
         float r1 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
         float r2 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
         float r3 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+        float r4 = LO2 + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI2 - LO2)));
         s->center = vec3(r1, r2, r3);
         // s->center = vec3(3.0, 0.0, -3.0);
-        s->radius = 2.2f;
+        s->radius = r4;
         m_spheres.push_back(s);
         auto aabb = std::make_shared<Aabb>();
         aabb->minimum = s->center - vec3(s->radius);

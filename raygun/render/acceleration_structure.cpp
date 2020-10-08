@@ -155,18 +155,19 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
 
         const auto blasAddress = vc.device->getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*model->bottomLevelAS)});
         instance.setAccelerationStructureReference(blasAddress);
+
         constexpr auto identity = glm::identity<mat4>();
-
-        const auto p = glm::translate(identity, model->sphere->center);
+        const auto p = glm::transpose(glm::translate(identity, model->sphere->center));
         memcpy(&instance.transform, &p, sizeof(instance.transform));
+
         instances.push_back(instance);
-
-        m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
-        m_instances->setName("Instances");
-
-        m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
-        m_instanceOffsetTable->setName("Instance Offset Table");
     }
+    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instances->setName("Instances");
+
+    m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instanceOffsetTable->setName("Instance Offset Table");
+
     // setup
     {
         vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
@@ -265,10 +266,8 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         instance.setAccelerationStructureReference(blasAddress);
 
         constexpr auto identity = glm::identity<mat4>();
-
-        const auto p = glm::translate(identity, model->sphere->center);
+        const auto p = glm::transpose(glm::translate(identity, model->sphere->center));
         memcpy(&instance.transform, &p, sizeof(instance.transform));
-        instances.push_back(instance);
 
         instances.push_back(instance);
     }
@@ -488,7 +487,9 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
     {
         vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
         geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eAabbs);
-        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)1);
+        // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)1);
+        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)RG().resourceManager().spheres().size());
+
         geometryTypeInfo.setIndexType(vk::IndexType::eNoneKHR);
         geometryTypeInfo.setVertexFormat(vk::Format::eUndefined);
         // geometryTypeInfo.setAllowsTransforms(VK_FALSE);
@@ -509,14 +510,14 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         // build
 
         vk::AccelerationStructureGeometryAabbsDataKHR aabbs = {};
-        // aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
-        aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
+        aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
+        // aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
         offsetInfo.setFirstVertex(0);
         offsetInfo.setPrimitiveCount(1);
-        offsetInfo.setPrimitiveOffset(0);
+        offsetInfo.setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
         offsetInfo.setTransformOffset(0);
 
         vk::AccelerationStructureGeometryDataKHR geometryData = {};
@@ -571,12 +572,13 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& pr
     {
         vk::AccelerationStructureGeometryAabbsDataKHR aabbs = {};
         aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
+        // aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
         offsetInfo.setFirstVertex(0);
         offsetInfo.setPrimitiveCount(1);
-        offsetInfo.setPrimitiveOffset(0);
+        offsetInfo.setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
         offsetInfo.setTransformOffset(0);
 
         vk::AccelerationStructureGeometryDataKHR geometryData = {};
