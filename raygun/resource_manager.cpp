@@ -160,9 +160,19 @@ void ResourceManager::setAabbs(std::vector<std::shared_ptr<Aabb>> aabbs)
     m_aabb = aabbs;
 }
 
-std::vector<std::shared_ptr<Aabb>> ResourceManager::aabb()
+std::vector<std::shared_ptr<Aabb>> ResourceManager::aabbs()
 {
     return m_aabb;
+}
+
+void ResourceManager::setProcModels(std::vector<std::shared_ptr<render::ProcModel>> procmodels)
+{
+    m_procModel = procmodels;
+}
+
+std::vector<std::shared_ptr<render::ProcModel>> ResourceManager::procModels()
+{
+    return m_procModel;
 }
 
 } // namespace raygun

@@ -1,8 +1,6 @@
 #pragma once
 
-class Aabb {
-  private:
-  public:
+struct Aabb {
     raygun::vec3 minimum;
     raygun::vec3 maximum;
 };

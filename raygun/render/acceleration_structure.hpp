@@ -22,15 +22,17 @@
 
 #pragma once
 
-#include "example/sphere.hpp"
+//#include "example/sphere.hpp"
 #include "raygun/gpu/gpu_buffer.hpp"
 #include "raygun/render/mesh.hpp"
+//#include "raygun/render/proc_model.hpp"
 
 namespace raygun {
 struct Scene;
 } // namespace raygun
 
 namespace raygun::render {
+struct ProcModel;
 
 class TopLevelAS {
   public:
@@ -65,13 +67,13 @@ class BottomLevelAS {
   public:
     BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
 
-    BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
+    BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& procmodel, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
 
     operator vk::AccelerationStructureKHR() const { return *m_structure; }
 
     void updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh);
 
-    void updateBLAS(const vk::CommandBuffer& cmd, const Sphere& sphere);
+    void updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& procmodel);
 
   private:
     vk::UniqueAccelerationStructureKHR m_structure;

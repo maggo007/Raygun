@@ -5,6 +5,7 @@
 
 #include "aabb.hpp"
 #include "ball.hpp"
+#include "raygun/render/proc_model.hpp"
 #include "sphere.hpp"
 
 // for added sphere https://nvpro-samples.github.io/vk_raytracing_tutorial/vkrt_tuto_intersection.md.html
@@ -18,6 +19,7 @@ class ExampleScene : public raygun::Scene {
     void addMesh() override;
     std::vector<std::shared_ptr<Sphere>> m_spheres;
     std::vector<std::shared_ptr<Aabb>> m_aabb;
+    std::vector<std::shared_ptr<raygun::render::ProcModel>> m_procModels;
 
   private:
     static constexpr raygun::vec3 CAMERA_OFFSET = {5.0f, 10.0f, 10.0f};

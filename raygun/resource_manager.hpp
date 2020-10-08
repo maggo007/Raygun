@@ -29,6 +29,7 @@
 #include "raygun/gpu/shader.hpp"
 #include "raygun/material.hpp"
 #include "raygun/render/model.hpp"
+#include "raygun/render/proc_model.hpp"
 #include "raygun/ui/text.hpp"
 
 namespace raygun {
@@ -74,7 +75,11 @@ class ResourceManager {
 
     void setAabbs(std::vector<std::shared_ptr<Aabb>> aabbs);
 
-    std::vector<std::shared_ptr<Aabb>> aabb();
+    std::vector<std::shared_ptr<Aabb>> aabbs();
+
+    void setProcModels(std::vector<std::shared_ptr<render::ProcModel>> procmodels);
+
+    std::vector<std::shared_ptr<render::ProcModel>> procModels();
 
   private:
     std::set<std::shared_ptr<render::Model>> m_loadedModels;
@@ -90,6 +95,8 @@ class ResourceManager {
     std::vector<std::shared_ptr<Sphere>> m_spheres;
 
     std::vector<std::shared_ptr<Aabb>> m_aabb;
+
+    std::vector<std::shared_ptr<render::ProcModel>> m_procModel;
 };
 
 using UniqueResourceManager = std::unique_ptr<ResourceManager>;

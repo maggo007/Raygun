@@ -22,10 +22,11 @@
 
 #include "raygun/render/acceleration_structure.hpp"
 
-#include "example/sphere.hpp"
+//#include "example/sphere.hpp"
 #include "raygun/gpu/gpu_utils.hpp"
 #include "raygun/raygun.hpp"
 #include "raygun/render/model.hpp"
+#include "raygun/render/proc_model.hpp"
 #include "raygun/scene.hpp"
 
 namespace raygun::render {
@@ -143,22 +144,29 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
     });
 
     // adding sphere blas
-    vk::AccelerationStructureInstanceKHR instance = {};
-    instance.setInstanceCustomIndex((uint32_t)instances.size());
-    instance.setMask(0xff);
-    instance.setInstanceShaderBindingTableRecordOffset(1);
 
-    const auto blasAddress = vc.device->getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*RG().renderSystem().raytracer().m_procBotLevel)});
-    instance.setAccelerationStructureReference(blasAddress);
+    auto procModels = RG().resourceManager().procModels();
+    for(auto& model: procModels) {
+        RAYGUN_ASSERT(model->bottomLevelAS);
+        vk::AccelerationStructureInstanceKHR instance = {};
+        instance.setInstanceCustomIndex((uint32_t)instances.size());
+        instance.setMask(0xff);
+        instance.setInstanceShaderBindingTableRecordOffset(1);
 
-    instances.push_back(instance);
+        const auto blasAddress = vc.device->getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*model->bottomLevelAS)});
+        instance.setAccelerationStructureReference(blasAddress);
+        constexpr auto identity = glm::identity<mat4>();
 
-    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
-    m_instances->setName("Instances");
+        const auto p = glm::translate(identity, model->sphere->center);
+        memcpy(&instance.transform, &p, sizeof(instance.transform));
+        instances.push_back(instance);
 
-    m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
-    m_instanceOffsetTable->setName("Instance Offset Table");
+        m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+        m_instances->setName("Instances");
 
+        m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+        m_instanceOffsetTable->setName("Instance Offset Table");
+    }
     // setup
     {
         vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
@@ -244,22 +252,26 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         return true;
     });
 
-    // adding one sphere blas
-    vk::AccelerationStructureInstanceKHR instance = {};
-    instance.setInstanceCustomIndex((uint32_t)instances.size());
-    instance.setMask(0xff);
-    instance.setInstanceShaderBindingTableRecordOffset(1);
+    // adding spheres
+    auto procModels = RG().resourceManager().procModels();
+    for(auto& model: procModels) {
+        RAYGUN_ASSERT(model->bottomLevelAS);
+        vk::AccelerationStructureInstanceKHR instance = {};
+        instance.setInstanceCustomIndex((uint32_t)instances.size());
+        instance.setMask(0xff);
+        instance.setInstanceShaderBindingTableRecordOffset(1);
 
-    const auto blasAddress = vc.device->getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*RG().renderSystem().raytracer().m_procBotLevel)});
-    instance.setAccelerationStructureReference(blasAddress);
+        const auto blasAddress = vc.device->getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*model->bottomLevelAS)});
+        instance.setAccelerationStructureReference(blasAddress);
 
-    instances.push_back(instance);
+        constexpr auto identity = glm::identity<mat4>();
 
-    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
-    m_instances->setName("Instances");
+        const auto p = glm::translate(identity, model->sphere->center);
+        memcpy(&instance.transform, &p, sizeof(instance.transform));
+        instances.push_back(instance);
 
-    m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
-    m_instanceOffsetTable->setName("Instance Offset Table");
+        instances.push_back(instance);
+    }
 
     // RAYGUN_DEBUG("m_instances before size= {}", m_instances->size());
 
@@ -468,7 +480,7 @@ void accelerationStructureBarrier(const vk::CommandBuffer& cmd)
                         {memoryBarrier}, {}, {});
 }
 
-BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere, vk::BuildAccelerationStructureFlagBitsKHR updatebit)
+BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& procmodel, vk::BuildAccelerationStructureFlagBitsKHR updatebit)
 {
     VulkanContext& vc = RG().vc();
 
@@ -479,7 +491,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere,
         geometryTypeInfo.setMaxPrimitiveCount((uint32_t)1);
         geometryTypeInfo.setIndexType(vk::IndexType::eNoneKHR);
         geometryTypeInfo.setVertexFormat(vk::Format::eUndefined);
-        geometryTypeInfo.setAllowsTransforms(VK_FALSE);
+        // geometryTypeInfo.setAllowsTransforms(VK_FALSE);
         geometryTypeInfo.setMaxVertexCount(0);
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
@@ -497,7 +509,8 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere,
         // build
 
         vk::AccelerationStructureGeometryAabbsDataKHR aabbs = {};
-        aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
+        // aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
+        aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
@@ -528,7 +541,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Sphere& sphere,
     }
 }
 
-void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Sphere& sphere)
+void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& procmodel)
 {
     VulkanContext& vc = RG().vc();
 

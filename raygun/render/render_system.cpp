@@ -451,7 +451,7 @@ void RenderSystem::setupProceduralBuffers()
 
     m_spheresBuffer->setName("Sphere Buffer");
 
-    auto aabbs = RG().resourceManager().aabb();
+    auto aabbs = RG().resourceManager().aabbs();
     m_spheresAabbBuffer =
         std::make_unique<gpu::Buffer>(aabbs.size() * sizeof(Aabb), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
                                       vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -463,33 +463,39 @@ void RenderSystem::setupProceduralBuffers()
 
 void RenderSystem::updateProceduralBuffers()
 {
-    auto spheres = RG().resourceManager().spheres();
+    auto procModels = RG().resourceManager().procModels();
 
     const auto sphereStart = static_cast<uint8_t*>(m_spheresBuffer->map());
     uint32_t sphereOffset = 0;
 
-    for(const auto& sphere: spheres) {
-        const auto sphereSize = (uint32_t)(sizeof(Sphere));
-
-        memcpy(sphereStart + sphereOffset, sphere.get(), sphereSize);
-
-        sphereOffset += sphereSize;
-    }
-
-    auto aabbs = RG().resourceManager().aabb();
-
     const auto aabbStart = static_cast<uint8_t*>(m_spheresAabbBuffer->map());
     uint32_t aabbOffset = 0;
 
-    for(const auto& aabb: aabbs) {
+    for(const auto& model: procModels) {
+        const auto sphereSize = (uint32_t)(sizeof(Sphere));
         const auto aabbSize = (uint32_t)(sizeof(Aabb));
 
-        memcpy(aabbStart + aabbOffset, aabb.get(), aabbSize);
+        model->sphereBufferRef.bufferAddress = m_spheresBuffer->address();
+        model->sphereBufferRef.offsetInBytes = sphereOffset;
+        model->sphereBufferRef.sizeInBytes = sphereSize;
+        model->sphereBufferRef.elementSize = sizeof(Sphere);
+
+        model->aabbBufferRef.bufferAddress = m_indexBuffer->address();
+        model->aabbBufferRef.offsetInBytes = aabbOffset;
+        model->aabbBufferRef.sizeInBytes = aabbSize;
+        model->aabbBufferRef.elementSize = sizeof(Aabb);
+
+        memcpy(sphereStart + sphereOffset, model->sphere.get(), sphereSize);
+
+        sphereOffset += sphereSize;
+
+        memcpy(aabbStart + aabbOffset, model->aabb.get(), aabbSize);
 
         aabbOffset += aabbSize;
     }
 
-    m_vertexBuffer->unmap();
+    m_spheresBuffer->unmap();
+    m_spheresAabbBuffer->unmap();
 }
 
 } // namespace raygun::render

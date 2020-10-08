@@ -46,23 +46,28 @@ ExampleScene::ExampleScene()
 
     // add procedural spheres https://nvpro-samples.github.io/vk_raytracing_tutorial/vkrt_tuto_intersection.md.html
 
-    for(uint32_t i = 0; i < 1; i++) {
+    for(uint32_t i = 0; i < 10; i++) {
+        auto procmodel = std::make_shared<render::ProcModel>();
         auto s = std::make_shared<Sphere>();
-        s->center = vec3(3.0f, 3.0f, -3.0f);
-        s->radius = 20.2f;
+        float r1 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+        float r2 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+        float r3 = LO + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (HI - LO)));
+        s->center = vec3(r1, r2, r3);
+        // s->center = vec3(3.0, 0.0, -3.0);
+        s->radius = 2.2f;
         m_spheres.push_back(s);
-    }
-
-    // Axis-aligned bounding box of each sphere
-    for(const auto& s: m_spheres) {
         auto aabb = std::make_shared<Aabb>();
         aabb->minimum = s->center - vec3(s->radius);
         aabb->maximum = s->center + vec3(s->radius);
         m_aabb.push_back(aabb);
+        procmodel->aabb = aabb;
+        procmodel->sphere = s;
+        m_procModels.push_back(procmodel);
     }
 
     RG().resourceManager().setSpheres(m_spheres);
     RG().resourceManager().setAabbs(m_aabb);
+    RG().resourceManager().setProcModels(m_procModels);
 }
 
 void ExampleScene::processInput(raygun::input::Input input, double timeDelta)

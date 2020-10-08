@@ -79,15 +79,18 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmd2)
             }
         }
     }
-    // only one structure at the moment
-    if(!m_procBotLevel || m_forceRebuildBLAS) {
-        m_procBotLevel = std::make_unique<BottomLevelAS>(cmd2, Sphere(),
-                                                         m_forceRebuildBLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
-                                                                            : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
-    }
-    else {
-        if(m_updateBLAS) {
-            m_procBotLevel->updateBLAS(cmd2, Sphere());
+
+    auto procModels = RG().resourceManager().procModels();
+    for(auto& model: procModels) {
+        if(!model->bottomLevelAS || m_forceRebuildBLAS) {
+            model->bottomLevelAS = std::make_unique<BottomLevelAS>(cmd2, *model,
+                                                                   m_forceRebuildBLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+                                                                                      : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        }
+        else {
+            if(m_updateBLAS) {
+                model->bottomLevelAS->updateBLAS(cmd2, *model);
+            }
         }
     }
     // cmd->end();
