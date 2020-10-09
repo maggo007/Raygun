@@ -158,7 +158,17 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
 
         constexpr auto identity = glm::identity<mat4>();
         const auto p = glm::transpose(glm::translate(identity, model->sphere->center));
-        memcpy(&instance.transform, &p, sizeof(instance.transform));
+        // memcpy(&instance.transform, &p, sizeof(instance.transform));
+
+        vk::TransformMatrixKHR transformation = std::array<std::array<float, 4>, 3>{
+            // clang-format off
+		1.0f, 0.0f, 0.0f, model->sphere->center.x,
+		0.0f, 1.0f, 0.0f, model->sphere->center.y,
+		0.0f, 0.0f, 1.0f, model->sphere->center.z
+            // clang-format on
+        };
+
+        instance.setTransform(transformation);
 
         instances.push_back(instance);
     }
@@ -267,7 +277,17 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
 
         constexpr auto identity = glm::identity<mat4>();
         const auto p = glm::transpose(glm::translate(identity, model->sphere->center));
-        memcpy(&instance.transform, &p, sizeof(instance.transform));
+        // memcpy(&instance.transform, &p, sizeof(instance.transform));
+
+        vk::TransformMatrixKHR transformation = std::array<std::array<float, 4>, 3>{
+            // clang-format off
+		1.0f, 0.0f, 0.0f, model->sphere->center.x,
+		0.0f, 1.0f, 0.0f, model->sphere->center.y,
+		0.0f, 0.0f, 1.0f, model->sphere->center.z
+            // clang-format on
+        };
+
+        instance.setTransform(transformation);
 
         instances.push_back(instance);
     }
@@ -487,12 +507,12 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
     {
         vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
         geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eAabbs);
-        // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)1);
-        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)RG().resourceManager().spheres().size());
+        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)1);
+        // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)RG().resourceManager().spheres().size());
 
         geometryTypeInfo.setIndexType(vk::IndexType::eNoneKHR);
         geometryTypeInfo.setVertexFormat(vk::Format::eUndefined);
-        // geometryTypeInfo.setAllowsTransforms(VK_FALSE);
+        geometryTypeInfo.setAllowsTransforms(VK_FALSE);
         geometryTypeInfo.setMaxVertexCount(0);
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
@@ -510,8 +530,8 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         // build
 
         vk::AccelerationStructureGeometryAabbsDataKHR aabbs = {};
-        aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
-        // aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
+        // aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
+        aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
@@ -571,8 +591,8 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& pr
     // build
     {
         vk::AccelerationStructureGeometryAabbsDataKHR aabbs = {};
-        aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
-        // aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
+        // aabbs.setData(RG().renderSystem().m_spheresAabbBuffer->address());
+        aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};

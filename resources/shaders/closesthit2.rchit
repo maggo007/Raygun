@@ -78,7 +78,7 @@ void main()
 
     Sphere instance = allSpheres.i[gl_PrimitiveID];
 
-    payload.hitValue = vec3(0.8, 0.0, 0.8);
+    payload.hitValue = vec3(instance.center.x, instance.center.y, instance.center.z);
     payload.roughValue = vec4(0.8, 0.0, 0.5, 0.3);
     payload.depth = gl_HitTEXT;
 }

@@ -452,9 +452,8 @@ void RenderSystem::setupProceduralBuffers()
     m_spheresBuffer->setName("Sphere Buffer");
 
     auto aabbs = RG().resourceManager().aabbs();
-    m_spheresAabbBuffer =
-        std::make_unique<gpu::Buffer>(aabbs.size() * sizeof(Aabb), vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-                                      vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+    m_spheresAabbBuffer = std::make_unique<gpu::Buffer>(aabbs.size() * sizeof(Aabb), vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                                        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
     m_spheresAabbBuffer->setName("Sphere AABB Buffer");
 
@@ -473,24 +472,23 @@ void RenderSystem::updateProceduralBuffers()
 
     for(const auto& model: procModels) {
         const auto sphereSize = (uint32_t)(sizeof(Sphere));
-        const auto aabbSize = (uint32_t)(sizeof(Aabb));
 
         model->sphereBufferRef.bufferAddress = m_spheresBuffer->address();
         model->sphereBufferRef.offsetInBytes = sphereOffset;
         model->sphereBufferRef.sizeInBytes = sphereSize;
         model->sphereBufferRef.elementSize = sizeof(Sphere);
 
-        model->aabbBufferRef.bufferAddress = m_indexBuffer->address();
+        memcpy(sphereStart + sphereOffset, model->sphere.get(), sphereSize);
+        sphereOffset += sphereSize;
+
+        const auto aabbSize = (uint32_t)(sizeof(Aabb));
+
+        model->aabbBufferRef.bufferAddress = m_spheresAabbBuffer->address();
         model->aabbBufferRef.offsetInBytes = aabbOffset;
         model->aabbBufferRef.sizeInBytes = aabbSize;
         model->aabbBufferRef.elementSize = sizeof(Aabb);
 
-        memcpy(sphereStart + sphereOffset, model->sphere.get(), sphereSize);
-
-        sphereOffset += sphereSize;
-
         memcpy(aabbStart + aabbOffset, model->aabb.get(), aabbSize);
-
         aabbOffset += aabbSize;
     }
 
