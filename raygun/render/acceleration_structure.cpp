@@ -152,6 +152,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         instance.setInstanceCustomIndex((uint32_t)instances.size());
         instance.setMask(0xff);
         instance.setInstanceShaderBindingTableRecordOffset(1);
+        instance.setFlags(vk::GeometryInstanceFlagBitsKHR::eTriangleCullDisable);
 
         const auto blasAddress = vc.device->getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*model->bottomLevelAS)});
         instance.setAccelerationStructureReference(blasAddress);
@@ -169,6 +170,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         };
 
         instance.setTransform(transformation);
+        instanceOffsetTable.emplace_back();
 
         instances.push_back(instance);
     }
@@ -188,7 +190,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
         createInfo.setFlags(updatebit);
 
-        createInfo.setMaxGeometryCount(1);
+        createInfo.setMaxGeometryCount((uint32_t)1);
         createInfo.setPGeometryInfos(&geometryTypeInfo);
 
         std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
@@ -288,6 +290,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         };
 
         instance.setTransform(transformation);
+        instanceOffsetTable.emplace_back();
 
         instances.push_back(instance);
     }
@@ -319,7 +322,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
         createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
-        createInfo.setMaxGeometryCount(1);
+        createInfo.setMaxGeometryCount((uint32_t)1);
         createInfo.setPGeometryInfos(&geometryTypeInfo);
 
         std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
@@ -513,12 +516,12 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         geometryTypeInfo.setIndexType(vk::IndexType::eNoneKHR);
         geometryTypeInfo.setVertexFormat(vk::Format::eUndefined);
         geometryTypeInfo.setAllowsTransforms(VK_FALSE);
-        geometryTypeInfo.setMaxVertexCount(0);
+        geometryTypeInfo.setMaxVertexCount((uint32_t)0);
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
         createInfo.setFlags(updatebit);
-        createInfo.setMaxGeometryCount(1);
+        createInfo.setMaxGeometryCount((uint32_t)1);
         createInfo.setPGeometryInfos(&geometryTypeInfo);
 
         std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
@@ -536,7 +539,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
         offsetInfo.setFirstVertex(0);
-        offsetInfo.setPrimitiveCount(1);
+        offsetInfo.setPrimitiveCount((uint32_t)1);
         offsetInfo.setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
         offsetInfo.setTransformOffset(0);
 
@@ -597,7 +600,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& pr
 
         vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
         offsetInfo.setFirstVertex(0);
-        offsetInfo.setPrimitiveCount(1);
+        offsetInfo.setPrimitiveCount((uint32_t)1);
         offsetInfo.setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
         offsetInfo.setTransformOffset(0);
 
