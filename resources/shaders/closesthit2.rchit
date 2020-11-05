@@ -78,7 +78,23 @@ void main()
 
     Sphere instance = allSpheres.i[gl_InstanceCustomIndexEXT];
 
-    payload.hitValue = vec3(abs(instance.center.x) / 10.0f, abs(instance.center.y) / 10.0f, abs(instance.center.z) / 10.0f);
-    payload.roughValue = vec4(vec3(abs(instance.center.x) / 10.0f, abs(instance.center.y) / 10.0f, abs(instance.center.z) / 10.0f), 0.3);
+    vec3 normal = normalize(worldPos - instance.center);
+
+    vec3 diffuse = vec3(abs(instance.center.x) / 10.0f, abs(instance.center.y) / 10.0f, abs(instance.center.z) / 10.0f);
+
+    // Computing the normal for a cube
+    if(gl_HitKindEXT == KIND_CUBE) // Aabb
+    {
+        vec3 absN = abs(normal);
+        float maxC = max(max(absN.x, absN.y), absN.z);
+        normal = (maxC == absN.x) ? vec3(sign(normal.x), 0, 0) : (maxC == absN.y) ? vec3(0, sign(normal.y), 0) : vec3(0, 0, sign(normal.z));
+    }
+
+    float dot_product = max(dot(-ubo.lightDir, normal), 0.2);
+    vec3 basecolor = diffuse * dot_product;
+
+    payload.hitValue = basecolor;
+    payload.normal = normal;
+    payload.roughValue = vec4(basecolor, 0.3);
     payload.depth = gl_HitTEXT;
 }
