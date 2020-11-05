@@ -143,13 +143,16 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         return true;
     });
 
+    RAYGUN_DEBUG("instances before spheres {}", instances.size());
     // adding sphere blas
 
     auto procModels = RG().resourceManager().procModels();
+    // customindex because sphere buffer starts at index 0
+    int customindex = 0;
     for(auto& model: procModels) {
         RAYGUN_ASSERT(model->bottomLevelAS);
         vk::AccelerationStructureInstanceKHR instance = {};
-        instance.setInstanceCustomIndex((uint32_t)instances.size());
+        instance.setInstanceCustomIndex(customindex++);
         instance.setMask(0xff);
         instance.setInstanceShaderBindingTableRecordOffset(1);
         instance.setFlags(vk::GeometryInstanceFlagBitsKHR::eTriangleCullDisable);
@@ -161,11 +164,19 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         const auto p = glm::transpose(glm::translate(identity, model->sphere->center));
         // memcpy(&instance.transform, &p, sizeof(instance.transform));
 
+        // vk::TransformMatrixKHR transformation = std::array<std::array<float, 4>, 3>{
+        //     // clang-format off
+        // 1.0f, 0.0f, 0.0f, model->sphere->center.x,
+        // 0.0f, 1.0f, 0.0f, model->sphere->center.y,
+        // 0.0f, 0.0f, 1.0f, model->sphere->center.z
+        //     // clang-format on
+        // };
+
         vk::TransformMatrixKHR transformation = std::array<std::array<float, 4>, 3>{
             // clang-format off
-		1.0f, 0.0f, 0.0f, model->sphere->center.x,
-		0.0f, 1.0f, 0.0f, model->sphere->center.y,
-		0.0f, 0.0f, 1.0f, model->sphere->center.z
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f
             // clang-format on
         };
 
@@ -267,12 +278,15 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
 
     // adding spheres
     auto procModels = RG().resourceManager().procModels();
+    // customindex because sphere buffer starts at index 0
+    int customindex = 0;
     for(auto& model: procModels) {
         RAYGUN_ASSERT(model->bottomLevelAS);
         vk::AccelerationStructureInstanceKHR instance = {};
-        instance.setInstanceCustomIndex((uint32_t)instances.size());
+        instance.setInstanceCustomIndex(customindex++);
         instance.setMask(0xff);
         instance.setInstanceShaderBindingTableRecordOffset(1);
+        instance.setFlags(vk::GeometryInstanceFlagBitsKHR::eTriangleCullDisable);
 
         const auto blasAddress = vc.device->getAccelerationStructureAddressKHR({vk::AccelerationStructureKHR(*model->bottomLevelAS)});
         instance.setAccelerationStructureReference(blasAddress);
@@ -281,11 +295,19 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         const auto p = glm::transpose(glm::translate(identity, model->sphere->center));
         // memcpy(&instance.transform, &p, sizeof(instance.transform));
 
+        // vk::TransformMatrixKHR transformation = std::array<std::array<float, 4>, 3>{
+        //     // clang-format off
+        // 1.0f, 0.0f, 0.0f, model->sphere->center.x,
+        // 0.0f, 1.0f, 0.0f, model->sphere->center.y,
+        // 0.0f, 0.0f, 1.0f, model->sphere->center.z
+        //     // clang-format on
+        // };
+
         vk::TransformMatrixKHR transformation = std::array<std::array<float, 4>, 3>{
             // clang-format off
-		1.0f, 0.0f, 0.0f, model->sphere->center.x,
-		0.0f, 1.0f, 0.0f, model->sphere->center.y,
-		0.0f, 0.0f, 1.0f, model->sphere->center.z
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f
             // clang-format on
         };
 
@@ -537,11 +559,14 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
-        vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
-        offsetInfo.setFirstVertex(0);
-        offsetInfo.setPrimitiveCount((uint32_t)1);
-        offsetInfo.setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
-        offsetInfo.setTransformOffset(0);
+        std::array<vk::AccelerationStructureBuildOffsetInfoKHR, 1> offsetInfo = {};
+        offsetInfo[0].setFirstVertex(0);
+        offsetInfo[0].setPrimitiveCount((uint32_t)1);
+        offsetInfo[0].setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
+        // offsetInfo[0].setPrimitiveOffset(0);
+        offsetInfo[0].setTransformOffset(0);
+
+        const auto pOffsetInfo = offsetInfo.data();
 
         vk::AccelerationStructureGeometryDataKHR geometryData = {};
         geometryData.setAabbs(aabbs);
@@ -561,7 +586,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setScratchData(m_scratch->address());
 
-        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
+        cmd.buildAccelerationStructureKHR(buildInfo, pOffsetInfo);
     }
 }
 
@@ -598,11 +623,14 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& pr
         aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
-        vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
-        offsetInfo.setFirstVertex(0);
-        offsetInfo.setPrimitiveCount((uint32_t)1);
-        offsetInfo.setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
-        offsetInfo.setTransformOffset(0);
+        std::array<vk::AccelerationStructureBuildOffsetInfoKHR, 1> offsetInfo = {};
+        offsetInfo[0].setFirstVertex(0);
+        offsetInfo[0].setPrimitiveCount((uint32_t)1);
+        offsetInfo[0].setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
+        // offsetInfo[0].setPrimitiveOffset(0);
+        offsetInfo[0].setTransformOffset(0);
+
+        const auto pOffsetInfo = offsetInfo.data();
 
         vk::AccelerationStructureGeometryDataKHR geometryData = {};
         geometryData.setAabbs(aabbs);
@@ -623,9 +651,8 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& pr
         buildInfo.setScratchData(m_scratch->address());
         buildInfo.setUpdate(true);
         buildInfo.setSrcAccelerationStructure(*m_structure);
-        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
 
-        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
+        cmd.buildAccelerationStructureKHR(buildInfo, pOffsetInfo);
     }
 }
 

@@ -112,7 +112,7 @@ void main()
     ray.origin = gl_WorldRayOriginEXT;
     ray.direction = gl_WorldRayDirectionEXT;
     // Sphere data
-    Sphere sphere = allSpheres.i[gl_PrimitiveID];
+    Sphere sphere = allSpheres.i[gl_InstanceCustomIndexEXT];
     float tHit = -1;
     // int hitKind = gl_PrimitiveID % 2 == 0 ? KIND_SPHERE : KIND_CUBE;
     int hitKind = KIND_SPHERE;
