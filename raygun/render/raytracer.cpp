@@ -38,8 +38,8 @@ namespace raygun::render {
 
 Raytracer::Raytracer() : vc(RG().vc())
 {
-    auto properties = vc.physicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPropertiesKHR>();
-    m_properties = properties.get<vk::PhysicalDeviceRayTracingPropertiesKHR>();
+    auto properties = vc.physicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
+    m_properties = properties.get<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
 
     setupRaytracingDescriptorSet();
 
@@ -144,8 +144,18 @@ const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
 
     initialImageBarrier(cmd);
 
-    cmd.traceRaysKHR(m_raygenSbt, m_missSbt, m_hitSbt, m_callableSbt, //
-                     vc.windowSize.width, vc.windowSize.height, 1);
+    // Size of a program identifier
+    uint32_t groupSize = m_properties.shaderGroupHandleSize * m_properties.shaderGroupBaseAlignment;
+    uint32_t groupStride = groupSize;
+    vk::DeviceAddress sbtAddress = m_sbtBuffer->address();
+
+    using Stride = vk::StridedDeviceAddressRegionKHR;
+    std::array<Stride, 4> strideAddresses{Stride{sbtAddress + 0u * groupSize, groupStride, groupSize * 1}, // raygen
+                                          Stride{sbtAddress + 1u * groupSize, groupStride, groupSize * 2}, // miss
+                                          Stride{sbtAddress + 3u * groupSize, groupStride, groupSize * 1}, // hit
+                                          Stride{0u, 0u, 0u}};                                             // callable
+
+    cmd.traceRaysKHR(&strideAddresses[0], &strideAddresses[1], &strideAddresses[2], &strideAddresses[3], vc.windowSize.width, vc.windowSize.height, 1);
 
     computeShaderImageBarrier(cmd, {m_baseImage.get(), m_normalImage.get(), m_roughImage.get()}, vk::PipelineStageFlagBits::eRayTracingShaderKHR);
 
@@ -363,13 +373,13 @@ void Raytracer::setupRaytracingPipeline()
 {
     const auto sbtStride = m_properties.shaderGroupBaseAlignment;
 
-    std::vector<vk::PipelineShaderStageCreateInfo> stages;
-    std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups;
+    // std::vector<vk::PipelineShaderStageCreateInfo> stages;
+    // std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups;
 
     // raygen group
     const auto raygenShader = RG().resourceManager().loadShader("raygen.rgen");
     {
-        m_raygenSbt.setOffset(groups.size() * sbtStride);
+        // m_raygenSbt.setOffset(groups.size() * sbtStride);
 
         stages.push_back(raygenShader->shaderStageInfo(vk::ShaderStageFlagBits::eRaygenKHR));
         groups.push_back(generalShaderGroupInfo((uint32_t)groups.size()));
@@ -379,7 +389,7 @@ void Raytracer::setupRaytracingPipeline()
     const auto missShader = RG().resourceManager().loadShader("miss.rmiss");
     const auto shadowMissShader = RG().resourceManager().loadShader("shadowMiss.rmiss");
     {
-        m_missSbt.setOffset(groups.size() * sbtStride);
+        // m_missSbt.setOffset(groups.size() * sbtStride);
 
         stages.push_back(missShader->shaderStageInfo(vk::ShaderStageFlagBits::eMissKHR));
         groups.push_back(generalShaderGroupInfo((uint32_t)groups.size()));
@@ -391,7 +401,7 @@ void Raytracer::setupRaytracingPipeline()
     // hit group
     const auto closestHitShader = RG().resourceManager().loadShader("closesthit.rchit");
     {
-        m_hitSbt.setOffset(groups.size() * sbtStride);
+        // m_hitSbt.setOffset(groups.size() * sbtStride);
 
         stages.push_back(closestHitShader->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitKHR));
         groups.push_back(closestHitShaderGroupInfo((uint32_t)groups.size()));
@@ -400,7 +410,7 @@ void Raytracer::setupRaytracingPipeline()
     // hit group spheres combined group index with intersection shader
     const auto closestHitShader2 = RG().resourceManager().loadShader("closesthit2.rchit");
     {
-        m_hitSbt2.setOffset(groups.size() * sbtStride);
+        // m_hitSbt2.setOffset(groups.size() * sbtStride);
 
         stages.push_back(closestHitShader2->shaderStageInfo(vk::ShaderStageFlagBits::eClosestHitKHR));
         // groups.push_back(closestHitShaderGroupInfo2((uint32_t)groups.size()));
@@ -409,7 +419,7 @@ void Raytracer::setupRaytracingPipeline()
     // intersection group set one group with hit and intersection
     const auto intersectionShader = RG().resourceManager().loadShader("intersection.rint");
     {
-        m_intSbt.setOffset(groups.size() * sbtStride);
+        // m_intSbt.setOffset(groups.size() * sbtStride);
 
         stages.push_back(intersectionShader->shaderStageInfo(vk::ShaderStageFlagBits::eIntersectionKHR));
         groups.push_back(combinedShaderGroupInfo((uint32_t)groups.size()));
@@ -417,12 +427,12 @@ void Raytracer::setupRaytracingPipeline()
 
     const auto sbtSize = groups.size() * sbtStride;
 
-    m_raygenSbt.setStride(sbtStride).setSize(sbtSize);
-    m_missSbt.setStride(sbtStride).setSize(sbtSize);
-    m_hitSbt.setStride(sbtStride).setSize(sbtSize);
-    m_hitSbt2.setStride(sbtStride).setSize(sbtSize);
-    m_callableSbt.setStride(sbtStride).setSize(sbtSize);
-    m_intSbt.setStride(sbtStride).setSize(sbtSize);
+    // m_raygenSbt.setStride(sbtStride).setSize(sbtSize);
+    // m_missSbt.setStride(sbtStride).setSize(sbtSize);
+    // m_hitSbt.setStride(sbtStride).setSize(sbtSize);
+    // m_hitSbt2.setStride(sbtStride).setSize(sbtSize);
+    // m_callableSbt.setStride(sbtStride).setSize(sbtSize);
+    // m_intSbt.setStride(sbtStride).setSize(sbtSize);
 
     {
         vk::PipelineLayoutCreateInfo info = {};
@@ -439,23 +449,34 @@ void Raytracer::setupRaytracingPipeline()
         info.setPStages(stages.data());
         info.setGroupCount((uint32_t)groups.size());
         info.setPGroups(groups.data());
-        info.setMaxRecursionDepth(7);
+        info.setMaxPipelineRayRecursionDepth(7);
+        if(m_properties.maxRayRecursionDepth <= 7) {
+            RAYGUN_ERROR("max recursion depth for hardware lower than needed");
+        }
         info.setLayout(*m_pipelineLayout);
 
-        m_pipeline = vc.device->createRayTracingPipelineKHRUnique(nullptr, info);
+        m_pipeline = vc.device->createRayTracingPipelineKHRUnique({}, {}, info);
         vc.setObjectName(*m_pipeline, "Ray Tracer");
     }
 }
 
 void Raytracer::setupShaderBindingTable()
 {
-    const auto sbtSize = m_raygenSbt.size;
-    const auto groupCount = (uint32_t)(m_raygenSbt.size / m_raygenSbt.stride);
+    // const auto sbtSize = m_raygenSbt.size;
+    const auto groupCount = groups.size();
+
+    uint32_t groupHandleSize = m_properties.shaderGroupHandleSize; // Size of a program identifier
+    uint32_t groupSizeAligned = groupHandleSize * m_properties.shaderGroupBaseAlignment;
+
+    // Fetch all the shader handles used in the pipeline, so that they can be written in the SBT
+    uint32_t sbtSize = groupCount * groupSizeAligned;
 
     std::vector<uint8_t> groupHandles(groupCount * m_properties.shaderGroupHandleSize);
     vc.device->getRayTracingShaderGroupHandlesKHR(*m_pipeline, 0, groupCount, groupHandles.size(), groupHandles.data());
 
-    m_sbtBuffer = std::make_unique<gpu::Buffer>(sbtSize, vk::BufferUsageFlagBits::eRayTracingKHR, vk::MemoryPropertyFlagBits::eHostVisible);
+    m_sbtBuffer = std::make_unique<gpu::Buffer>(
+        sbtSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eShaderDeviceAddressKHR | vk::BufferUsageFlagBits::eShaderBindingTableKHR,
+        vk::MemoryPropertyFlagBits::eHostVisible);
     m_sbtBuffer->setName("Shader Binding Table");
 
     // Shader group handles should be aligned according to
@@ -473,12 +494,12 @@ void Raytracer::setupShaderBindingTable()
         m_sbtBuffer->unmap();
     }
 
-    m_raygenSbt.setBuffer(*m_sbtBuffer);
-    m_missSbt.setBuffer(*m_sbtBuffer);
-    m_hitSbt.setBuffer(*m_sbtBuffer);
-    m_hitSbt2.setBuffer(*m_sbtBuffer);
-    m_callableSbt.setBuffer(*m_sbtBuffer);
-    m_intSbt.setBuffer(*m_sbtBuffer);
+    // m_raygenSbt.setBuffer(*m_sbtBuffer);
+    // m_missSbt.setBuffer(*m_sbtBuffer);
+    // m_hitSbt.setBuffer(*m_sbtBuffer);
+    // m_hitSbt2.setBuffer(*m_sbtBuffer);
+    // m_callableSbt.setBuffer(*m_sbtBuffer);
+    // m_intSbt.setBuffer(*m_sbtBuffer);
 }
 
 void Raytracer::setupPostprocessing()

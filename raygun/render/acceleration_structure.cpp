@@ -234,10 +234,10 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         buildInfo.setFlags(updatebit);
         buildInfo.setScratchData(m_scratch->address());
 
-        vk::AccelerationStructureBuildOffsetInfoKHR offset = {};
+        vk::AccelerationStructureBuildRangeInfoKHR offset = {};
         offset.setPrimitiveCount((uint32_t)instances.size());
 
-        cmd.buildAccelerationStructureKHR(buildInfo, &offset);
+        cmd.buildAccelerationStructuresKHR(buildInfo, &offset);
     }
 
     m_descriptorInfo.setAccelerationStructureCount(1);
@@ -379,10 +379,10 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         if(!rebuild) buildInfo.setUpdate(true);
         buildInfo.setScratchData(m_scratch->address());
 
-        vk::AccelerationStructureBuildOffsetInfoKHR offset = {};
+        vk::AccelerationStructureBuildRangeInfoKHR offset = {};
         offset.setPrimitiveCount((uint32_t)instances.size());
 
-        cmd.buildAccelerationStructureKHR(buildInfo, &offset);
+        cmd.buildAccelerationStructuresKHR(buildInfo, &offset);
     }
 
     m_descriptorInfo.setAccelerationStructureCount(1);
@@ -395,7 +395,8 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk:
 
     // setup
     {
-        vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+        vk::AccelerationStructureGeometryKHR geometryTypeInfo = {};
+        // vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
         geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eTriangles);
         geometryTypeInfo.setMaxPrimitiveCount((uint32_t)mesh.numFaces());
         geometryTypeInfo.setIndexType(vk::IndexType::eUint32);
@@ -424,7 +425,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk:
         triangles.setIndexData(mesh.indexBufferRef.bufferAddress);
         triangles.setIndexType(vk::IndexType::eUint32);
 
-        vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
+        vk::AccelerationStructureBuildRangeInfoKHR offsetInfo = {};
         offsetInfo.setPrimitiveCount((uint32_t)mesh.numFaces());
         offsetInfo.setPrimitiveOffset(mesh.indexBufferRef.offsetInBytes);
         offsetInfo.setFirstVertex(mesh.vertexBufferRef.offsetInElements());
@@ -447,7 +448,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk:
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setScratchData(m_scratch->address());
 
-        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
+        cmd.buildAccelerationStructuresKHR(buildInfo, &offsetInfo);
     }
 }
 
@@ -486,7 +487,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
         triangles.setIndexData(mesh.indexBufferRef.bufferAddress);
         triangles.setIndexType(vk::IndexType::eUint32);
 
-        vk::AccelerationStructureBuildOffsetInfoKHR offsetInfo = {};
+        vk::AccelerationStructureBuildRangeInfoKHR offsetInfo = {};
         offsetInfo.setPrimitiveCount((uint32_t)mesh.numFaces());
         offsetInfo.setPrimitiveOffset(mesh.indexBufferRef.offsetInBytes);
         offsetInfo.setFirstVertex(mesh.vertexBufferRef.offsetInElements());
@@ -510,7 +511,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
         buildInfo.setScratchData(m_scratch->address());
         buildInfo.setUpdate(true);
         buildInfo.setSrcAccelerationStructure(*m_structure);
-        cmd.buildAccelerationStructureKHR(buildInfo, &offsetInfo);
+        cmd.buildAccelerationStructuresKHR(buildInfo, &offsetInfo);
     }
 }
 
@@ -559,7 +560,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
-        std::array<vk::AccelerationStructureBuildOffsetInfoKHR, 1> offsetInfo = {};
+        std::array<vk::AccelerationStructureBuildRangeInfoKHR, 1> offsetInfo = {};
         offsetInfo[0].setFirstVertex(0);
         offsetInfo[0].setPrimitiveCount((uint32_t)1);
         offsetInfo[0].setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
@@ -586,7 +587,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setScratchData(m_scratch->address());
 
-        cmd.buildAccelerationStructureKHR(buildInfo, pOffsetInfo);
+        cmd.buildAccelerationStructuresKHR(buildInfo, pOffsetInfo);
     }
 }
 
@@ -623,7 +624,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& pr
         aabbs.setData(procmodel.aabbBufferRef.bufferAddress);
         aabbs.setStride(sizeof(Aabb));
 
-        std::array<vk::AccelerationStructureBuildOffsetInfoKHR, 1> offsetInfo = {};
+        std::array<vk::AccelerationStructureBuildRangeInfoKHR, 1> offsetInfo = {};
         offsetInfo[0].setFirstVertex(0);
         offsetInfo[0].setPrimitiveCount((uint32_t)1);
         offsetInfo[0].setPrimitiveOffset(procmodel.aabbBufferRef.offsetInBytes);
@@ -652,7 +653,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& pr
         buildInfo.setUpdate(true);
         buildInfo.setSrcAccelerationStructure(*m_structure);
 
-        cmd.buildAccelerationStructureKHR(buildInfo, pOffsetInfo);
+        cmd.buildAccelerationStructuresKHR(buildInfo, pOffsetInfo);
     }
 }
 

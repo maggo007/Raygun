@@ -67,21 +67,25 @@ struct Raytracer {
     void computeShaderImageBarrier(vk::CommandBuffer& cmd, std::initializer_list<gpu::Image*> images,
                                    vk::PipelineStageFlags srcStageMask = vk::PipelineStageFlagBits::eComputeShader);
 
-    vk::PhysicalDeviceRayTracingPropertiesKHR m_properties = {};
+    vk::PhysicalDeviceRayTracingPipelinePropertiesKHR m_properties = {};
+    vk::PhysicalDeviceAccelerationStructurePropertiesKHR m_propertiesAS = {};
 
     UniqueTopLevelAS m_topLevelAS;
 
     gpu::DescriptorSet m_descriptorSet;
 
-    vk::StridedBufferRegionKHR m_raygenSbt;
-    vk::StridedBufferRegionKHR m_missSbt;
-    vk::StridedBufferRegionKHR m_hitSbt;
-    vk::StridedBufferRegionKHR m_hitSbt2;
-    vk::StridedBufferRegionKHR m_intSbt;
-    vk::StridedBufferRegionKHR m_callableSbt;
+    // vk::StridedBufferRegionKHR m_raygenSbt;
+    // vk::StridedBufferRegionKHR m_missSbt;
+    // vk::StridedBufferRegionKHR m_hitSbt;
+    // vk::StridedBufferRegionKHR m_hitSbt2;
+    // vk::StridedBufferRegionKHR m_intSbt;
+    // vk::StridedBufferRegionKHR m_callableSbt;
 
     vk::UniquePipeline m_pipeline;
     vk::UniquePipelineLayout m_pipelineLayout;
+
+    std::vector<vk::PipelineShaderStageCreateInfo> stages;
+    std::vector<vk::RayTracingShaderGroupCreateInfoKHR> groups;
 
     gpu::UniqueBuffer m_sbtBuffer;
 
