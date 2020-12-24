@@ -28,6 +28,8 @@
 #include "raygun/render/model.hpp"
 #include "raygun/render/proc_model.hpp"
 #include "raygun/scene.hpp"
+#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace raygun::render {
 
@@ -54,57 +56,64 @@ namespace {
     }
 
     std::tuple<vk::UniqueAccelerationStructureKHR, vk::UniqueDeviceMemory, gpu::UniqueBuffer>
-    createStructureMemoryScratch(const vk::AccelerationStructureCreateInfoKHR& createInfo)
+    createStructureMemoryScratch(const vk::AccelerationStructureBuildGeometryInfoKHR& buildInfo)
     {
         VulkanContext& vc = RG().vc();
 
+        vk::AccelerationStructureBuildSizesInfoKHR sizeInfo =
+            vc.device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, buildInfo, buildInfo.geometryCount);
+
+        vk::AccelerationStructureCreateInfoKHR createInfo;
+        createInfo.setType(buildInfo.type);
+        createInfo.setSize(sizeInfo.accelerationStructureSize);
         auto structure = vc.device->createAccelerationStructureKHRUnique(createInfo);
 
-        // allocate memory
-        vk::UniqueDeviceMemory memory;
-        {
-            vk::AccelerationStructureMemoryRequirementsInfoKHR memInfo = {};
-            memInfo.setAccelerationStructure(*structure);
-            memInfo.setType(vk::AccelerationStructureMemoryRequirementsTypeKHR::eObject);
+        // // allocate memory
+        // vk::UniqueDeviceMemory memory;
+        // {
+        //     // vk::AccelerationStructureBuildSizesInfoKHR memInfo = {};
+        //     // memInfo.setAccelerationStructure(*structure);
+        //     // memInfo.setType(vk::AccelerationStructureMemoryRequirementsTypeKHR::eObject);
 
-            auto memoryRequirements = vc.device->getAccelerationStructureMemoryRequirementsKHR(memInfo).memoryRequirements;
+        //     auto memoryRequirements = sizeInfo.accelerationStructureSize;
 
-            vk::MemoryAllocateFlagsInfo allocInfoFlags = {};
-            allocInfoFlags.setFlags(vk::MemoryAllocateFlagBits::eDeviceAddress);
+        //     vk::MemoryAllocateFlagsInfo allocInfoFlags = {};
+        //     allocInfoFlags.setFlags(vk::MemoryAllocateFlagBits::eDeviceAddress);
 
-            vk::MemoryAllocateInfo allocInfo = {};
-            allocInfo.setAllocationSize(memoryRequirements.size);
-            allocInfo.setMemoryTypeIndex(gpu::selectMemoryType(vc.physicalDevice, memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
-            allocInfo.setPNext(&allocInfoFlags);
+        //     vk::MemoryAllocateInfo allocInfo = {};
+        //     allocInfo.setAllocationSize(memoryRequirements);
+        //     allocInfo.setMemoryTypeIndex(gpu::selectMemoryType(vc.physicalDevice, memoryRequirements, vk::MemoryPropertyFlagBits::eDeviceLocal));
+        //     allocInfo.setPNext(&allocInfoFlags);
 
-            memory = vc.device->allocateMemoryUnique(allocInfo);
-            RAYGUN_DEBUG("Memory {} for Type:{} with Vertices:{}", allocInfo.allocationSize, ((int)createInfo.type == 0) ? "TOPLEVEL" : "BOTLEVEL",
-                         createInfo.pGeometryInfos->maxVertexCount);
-        }
+        //     memory = vc.device->allocateMemoryUnique(allocInfo);
+        //     RAYGUN_DEBUG("Memory {} for Type:{} with Vertices:{}", allocInfo.allocationSize, ((int)createInfo.type == 0) ? "TOPLEVEL" : "BOTLEVEL",
+        //                  buildInfo.geometryCount);
+        // }
 
-        // bind memory
-        {
-            vk::BindAccelerationStructureMemoryInfoKHR bindInfo = {};
-            bindInfo.setAccelerationStructure(*structure);
-            bindInfo.setMemory(*memory);
+        // // bind memory
+        // {
+        //     vk::BindAccelerationStructureMemoryInfoKHR bindInfo = {};
+        //     bindInfo.setAccelerationStructure(*structure);
+        //     bindInfo.setMemory(*memory);
 
-            vc.device->bindAccelerationStructureMemoryKHR(bindInfo);
-        }
+        //     vc.device->bindAccelerationStructureMemoryKHR(bindInfo);
+        // }
 
         // setup scratch buffer
         gpu::UniqueBuffer scratch;
         {
-            vk::AccelerationStructureMemoryRequirementsInfoKHR memInfo = {};
-            memInfo.setAccelerationStructure(*structure);
-            memInfo.setType(vk::AccelerationStructureMemoryRequirementsTypeKHR::eBuildScratch);
+            // vk::AccelerationStructureMemoryRequirementsInfoKHR memInfo = {};
+            // memInfo.setAccelerationStructure(*structure);
+            // memInfo.setType(vk::AccelerationStructureMemoryRequirementsTypeKHR::eBuildScratch);
 
-            auto memoryRequirements = vc.device->getAccelerationStructureMemoryRequirementsKHR(memInfo).memoryRequirements;
+            // auto memoryRequirements = vc.device->getAccelerationStructureMemoryRequirementsKHR(memInfo).memoryRequirements;
+            auto memoryRequirements = sizeInfo.buildScratchSize;
 
             scratch =
-                std::make_unique<gpu::Buffer>(memoryRequirements.size, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress,
-                                              vk::MemoryPropertyFlagBits::eDeviceLocal);
+                std::make_unique<gpu::Buffer>(memoryRequirements, vk::BufferUsageFlagBits::eShaderDeviceAddress, vk::MemoryPropertyFlagBits::eDeviceLocal);
             // RAYGUN_DEBUG("Scratch memory{}", memoryRequirements.size);
         }
+        vk::UniqueDeviceMemory memory; // not used anymore?
 
         return {std::move(structure), std::move(memory), std::move(scratch)};
     }
@@ -185,7 +194,7 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
 
         instances.push_back(instance);
     }
-    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eShaderDeviceAddress);
     m_instances->setName("Instances");
 
     m_instanceOffsetTable = gpu::copyToBuffer(instanceOffsetTable, vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
@@ -193,22 +202,22 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
 
     // setup
     {
-        vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-        geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
-        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)instances.size());
+        // vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+        // geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
+        // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)instances.size());
 
-        vk::AccelerationStructureCreateInfoKHR createInfo = {};
-        createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
-        createInfo.setFlags(updatebit);
+        // vk::AccelerationStructureCreateInfoKHR createInfo = {};
+        // createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+        // createInfo.setFlags(updatebit);
 
-        createInfo.setMaxGeometryCount((uint32_t)1);
-        createInfo.setPGeometryInfos(&geometryTypeInfo);
+        // createInfo.setMaxGeometryCount((uint32_t)1);
+        // createInfo.setPGeometryInfos(&geometryTypeInfo);
 
-        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+        // std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
 
-        vc.setObjectName(*m_structure, "TLAS Structure");
-        vc.setObjectName(*m_memory, "TLAS Memory");
-        m_scratch->setName("TLAS Scratch");
+        // vc.setObjectName(*m_structure, "TLAS Structure");
+        // vc.setObjectName(*m_memory, "TLAS Memory");
+        // m_scratch->setName("TLAS Scratch");
     }
 
     // build
@@ -232,6 +241,13 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setFlags(updatebit);
+
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo);
+
+        vc.setObjectName(*m_structure, "TLAS Structure");
+        vc.setObjectName(*m_memory, "TLAS Memory");
+        m_scratch->setName("TLAS Scratch");
+
         buildInfo.setScratchData(m_scratch->address());
 
         vk::AccelerationStructureBuildRangeInfoKHR offset = {};
@@ -322,7 +338,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
     auto instancesize = m_instances->size();
     bool rebuild = false;
 
-    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eRayTracingKHR | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+    m_instances = gpu::copyToBuffer(instances, vk::BufferUsageFlagBits::eShaderDeviceAddress);
     m_instances->setName("Instances");
 
     // Rebuild if instances are not the same anymore
@@ -336,23 +352,23 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
     m_instanceOffsetTable->setName("Instance Offset Table");
 
     // setup not needed for update except for instancenumber changes
-    if(rebuild) {
-        vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-        geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
-        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)instances.size());
+    // if(rebuild) {
+    //     vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
+    //     geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eInstances);
+    //     geometryTypeInfo.setMaxPrimitiveCount((uint32_t)instances.size());
 
-        vk::AccelerationStructureCreateInfoKHR createInfo = {};
-        createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
-        createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
-        createInfo.setMaxGeometryCount((uint32_t)1);
-        createInfo.setPGeometryInfos(&geometryTypeInfo);
+    //     vk::AccelerationStructureCreateInfoKHR createInfo = {};
+    //     createInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+    //     createInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace);
+    //     createInfo.setMaxGeometryCount((uint32_t)1);
+    //     createInfo.setPGeometryInfos(&geometryTypeInfo);
 
-        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+    //     std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
 
-        vc.setObjectName(*m_structure, "TLAS Structure");
-        vc.setObjectName(*m_memory, "TLAS Memory");
-        m_scratch->setName("TLAS Scratch");
-    }
+    //     vc.setObjectName(*m_structure, "TLAS Structure");
+    //     vc.setObjectName(*m_memory, "TLAS Memory");
+    //     m_scratch->setName("TLAS Scratch");
+    // }
 
     // build
     {
@@ -376,7 +392,13 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
-        if(!rebuild) buildInfo.setUpdate(true);
+        // if(!rebuild) buildInfo.setUpdate(true);
+        if(rebuild) {
+            std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo);
+            vc.setObjectName(*m_structure, "TLAS Structure");
+            vc.setObjectName(*m_memory, "TLAS Memory");
+            m_scratch->setName("TLAS Scratch");
+        }
         buildInfo.setScratchData(m_scratch->address());
 
         vk::AccelerationStructureBuildRangeInfoKHR offset = {};
@@ -395,25 +417,27 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk:
 
     // setup
     {
-        vk::AccelerationStructureGeometryKHR geometryTypeInfo = {};
+        // now uses buildinfo for scratch allocation
+
+        // vk::AccelerationStructureGeometryKHR geometryTypeInfo = {};
         // vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-        geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eTriangles);
-        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)mesh.numFaces());
-        geometryTypeInfo.setIndexType(vk::IndexType::eUint32);
-        geometryTypeInfo.setMaxVertexCount((uint32_t)mesh.vertices.size());
-        geometryTypeInfo.setVertexFormat(vk::Format::eR32G32B32Sfloat);
+        // geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eTriangles);
+        // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)mesh.numFaces());
+        // geometryTypeInfo.geometry.triangles.setIndexType(vk::IndexType::eUint32);
+        // geometryTypeInfo.geometry.triangles.setMaxVertex((uint32_t)mesh.vertices.size());
+        // geometryTypeInfo.geometry.triangles.setVertexFormat(vk::Format::eR32G32B32Sfloat);
 
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
-        createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
-        createInfo.setFlags(updatebit);
-        createInfo.setMaxGeometryCount(1);
-        createInfo.setPGeometryInfos(&geometryTypeInfo);
+        // createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+        // createInfo.setFlags(updatebit);
+        // createInfo.setMaxGeometryCount(1);
+        // createInfo.setPGeometryInfos(&geometryTypeInfo);
 
-        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+        // std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
 
-        vc.setObjectName(*m_structure, "BLAS Structure");
-        vc.setObjectName(*m_memory, "BLAS Memory");
-        m_scratch->setName("BLAS Scratch");
+        // vc.setObjectName(*m_structure, "BLAS Structure");
+        // vc.setObjectName(*m_memory, "BLAS Memory");
+        // m_scratch->setName("BLAS Scratch");
     }
 
     // build
@@ -443,10 +467,16 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk:
         vk::AccelerationStructureBuildGeometryInfoKHR buildInfo = {};
         buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
         buildInfo.setFlags(updatebit);
-        buildInfo.setDstAccelerationStructure(*m_structure);
+        // buildInfo.setDstAccelerationStructure(*m_structure);
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
-        buildInfo.setScratchData(m_scratch->address());
+        // buildInfo.setScratchData(m_scratch->address());
+
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo);
+
+        vc.setObjectName(*m_structure, "BLAS Structure");
+        vc.setObjectName(*m_memory, "BLAS Memory");
+        m_scratch->setName("BLAS Scratch");
 
         cmd.buildAccelerationStructuresKHR(buildInfo, &offsetInfo);
     }
@@ -509,7 +539,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setScratchData(m_scratch->address());
-        buildInfo.setUpdate(true);
+        // buildInfo.setUpdate(true);
         buildInfo.setSrcAccelerationStructure(*m_structure);
         cmd.buildAccelerationStructuresKHR(buildInfo, &offsetInfo);
     }
@@ -531,27 +561,27 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
 
     // setup
     {
-        vk::AccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-        geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eAabbs);
-        geometryTypeInfo.setMaxPrimitiveCount((uint32_t)1);
-        // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)RG().resourceManager().spheres().size());
+        // vk::AccelerationStructureGeometryKHR geometryTypeInfo = {};
+        // geometryTypeInfo.setGeometryType(vk::GeometryTypeKHR::eAabbs);
+        // // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)1);
+        // // geometryTypeInfo.setMaxPrimitiveCount((uint32_t)RG().resourceManager().spheres().size());
 
-        geometryTypeInfo.setIndexType(vk::IndexType::eNoneKHR);
-        geometryTypeInfo.setVertexFormat(vk::Format::eUndefined);
-        geometryTypeInfo.setAllowsTransforms(VK_FALSE);
-        geometryTypeInfo.setMaxVertexCount((uint32_t)0);
+        // // geometryTypeInfo.setIndexType(vk::IndexType::eNoneKHR);
+        // // geometryTypeInfo.setVertexFormat(vk::Format::eUndefined);
+        // // geometryTypeInfo.setAllowsTransforms(VK_FALSE);
+        // // geometryTypeInfo.setMaxVertexCount((uint32_t)0);
 
-        vk::AccelerationStructureCreateInfoKHR createInfo = {};
-        createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
-        createInfo.setFlags(updatebit);
-        createInfo.setMaxGeometryCount((uint32_t)1);
-        createInfo.setPGeometryInfos(&geometryTypeInfo);
+        // vk::AccelerationStructureCreateInfoKHR createInfo = {};
+        // createInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+        // // createInfo.setFlags(updatebit);
+        // createInfo.setsetMaxGeometryCount((uint32_t)1);
+        // createInfo.setPGeometryInfos(&geometryTypeInfo);
 
-        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
+        // std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(createInfo);
 
-        vc.setObjectName(*m_structure, "BLAS Structure");
-        vc.setObjectName(*m_memory, "BLAS Memory");
-        m_scratch->setName("BLAS Scratch");
+        // vc.setObjectName(*m_structure, "BLAS Structure");
+        // vc.setObjectName(*m_memory, "BLAS Memory");
+        // m_scratch->setName("BLAS Scratch");
 
         // build
 
@@ -585,6 +615,13 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         buildInfo.setDstAccelerationStructure(*m_structure);
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
+
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo);
+
+        vc.setObjectName(*m_structure, "BLAS Structure");
+        vc.setObjectName(*m_memory, "BLAS Memory");
+        m_scratch->setName("BLAS Scratch");
+
         buildInfo.setScratchData(m_scratch->address());
 
         cmd.buildAccelerationStructuresKHR(buildInfo, pOffsetInfo);
@@ -650,7 +687,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const ProcModel& pr
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
         buildInfo.setScratchData(m_scratch->address());
-        buildInfo.setUpdate(true);
+        //        buildInfo.setUpdate(true);
         buildInfo.setSrcAccelerationStructure(*m_structure);
 
         cmd.buildAccelerationStructuresKHR(buildInfo, pOffsetInfo);
