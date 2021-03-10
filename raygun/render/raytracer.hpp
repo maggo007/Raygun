@@ -38,7 +38,11 @@ struct Raytracer {
 
     void setupBottomLevelAS(vk::CommandBuffer& cmd);
 
+    void setupBottomLevelASpreload();
+
     void setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene);
+
+    void setupTopLevelASpreload(const Scene& scene);
 
     const gpu::Image& doRaytracing(vk::CommandBuffer& cmd);
 

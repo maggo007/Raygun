@@ -96,9 +96,9 @@ void RenderSystem::render(Scene& scene)
 
         updateModelBuffers();
 
-        m_raytracer->setupBottomLevelAS(*m_commandBuffer);
+        // m_raytracer->setupBottomLevelAS(*m_commandBuffer);
 
-        m_raytracer->setupTopLevelAS(*m_commandBuffer, scene);
+        // m_raytracer->setupTopLevelAS(*m_commandBuffer, scene);
 
         m_raytracer->updateRenderTarget(*m_uniformBuffer, *m_vertexBuffer, *m_indexBuffer, *m_materialBuffer, *m_spheresBuffer);
 
@@ -158,11 +158,12 @@ void RenderSystem::render(Scene& scene)
         endRenderPass();
     }
     endFrame();
+    // vc.waitIdle();
 
     RG().profiler().endFrame();
     presentFrame();
 
-    vc.waitIdle();
+    // vc.waitIdle();
 }
 
 namespace {
@@ -344,6 +345,7 @@ void RenderSystem::updateMaterialBuffer(std::vector<Model*>& models)
 
 void RenderSystem::beginFrame()
 {
+    RAYGUN_DEBUG("begin frame");
     m_framebufferIndex = m_swapchain->nextImageIndex(*m_imageAcquiredSemaphore);
 
     // Ensure command buffer is ready to use.

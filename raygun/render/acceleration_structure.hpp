@@ -50,7 +50,7 @@ class TopLevelAS {
     vk::WriteDescriptorSetAccelerationStructureKHR m_descriptorInfo = {};
 
     vk::UniqueAccelerationStructureKHR m_structure;
-    vk::UniqueDeviceMemory m_memory;
+    gpu::UniqueBuffer m_memory;
     gpu::UniqueBuffer m_instances;
     gpu::UniqueBuffer m_scratch;
 
@@ -69,6 +69,10 @@ class BottomLevelAS {
 
     BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& procmodel, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
 
+    // BottomLevelAS(const vk::UniqueCommandBuffer& cmd, const Mesh& mesh, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
+
+    // BottomLevelAS(const vk::UniqueCommandBuffer& cmd, const ProcModel& procmodel, vk::BuildAccelerationStructureFlagBitsKHR updatebit);
+
     operator vk::AccelerationStructureKHR() const { return *m_structure; }
 
     void updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh);
@@ -77,7 +81,7 @@ class BottomLevelAS {
 
   private:
     vk::UniqueAccelerationStructureKHR m_structure;
-    vk::UniqueDeviceMemory m_memory;
+    gpu::UniqueBuffer m_memory;
     gpu::UniqueBuffer m_scratch;
 };
 

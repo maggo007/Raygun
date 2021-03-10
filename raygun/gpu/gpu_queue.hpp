@@ -35,6 +35,7 @@ class Queue {
 
     vk::CommandPool& commandPool() { return *m_commandPool; }
 
+    vk::CommandBuffer createCommandBufferNU();
     vk::UniqueCommandBuffer createCommandBuffer();
 
     void submit(vk::ArrayProxy<const vk::CommandBuffer> cmds, vk::Fence fence = {}, vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},

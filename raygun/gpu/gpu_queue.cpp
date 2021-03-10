@@ -31,6 +31,16 @@ Queue::Queue(const vk::Device& device, uint32_t familyIndex) : m_familyIndex(fam
     setupCommandPool();
 }
 
+vk::CommandBuffer Queue::createCommandBufferNU()
+{
+    vk::CommandBufferAllocateInfo info;
+    info.setCommandPool(*m_commandPool);
+    info.setLevel(vk::CommandBufferLevel::ePrimary);
+    info.setCommandBufferCount(1);
+
+    return std::move(m_device.allocateCommandBuffers(info).at(0));
+}
+
 vk::UniqueCommandBuffer Queue::createCommandBuffer()
 {
     vk::CommandBufferAllocateInfo info;

@@ -56,13 +56,13 @@ Raytracer::Raytracer() : vc(RG().vc())
 
 void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmd2)
 {
-    // auto cmd = vc.computeQueue->createCommandBuffer();
-    // vc.setObjectName(*cmd, "BLAS");
+    // auto cmd1 = vc.computeQueue->createCommandBuffer();
+    // vc.setObjectName(*cmd1, "BLAS");
 
     // auto fence = vc.device->createFenceUnique({});
     // vc.setObjectName(*fence, "BLAS");
 
-    // cmd->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    // cmd1.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
     RG().profiler().writeTimestamp(cmd2, TimestampQueryID::BLASBuildStart);
     auto models = RG().resourceManager().models();
@@ -100,6 +100,52 @@ void Raytracer::setupBottomLevelAS(vk::CommandBuffer& cmd2)
     RG().profiler().writeTimestamp(cmd2, TimestampQueryID::BLASBuildEnd);
 }
 
+void Raytracer::setupBottomLevelASpreload()
+{
+    auto cmd1 = vc.computeQueue->createCommandBuffer();
+    vc.setObjectName(*cmd1, "BLAS preload");
+
+    auto fence = vc.device->createFenceUnique({});
+    vc.setObjectName(*fence, "BLAS preload");
+
+    cmd1->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+
+    // RG().profiler().writeTimestamp(cmd1, TimestampQueryID::BLASBuildStart);
+    auto models = RG().resourceManager().models();
+    for(auto& model: models) {
+        if(!model->bottomLevelAS || m_forceRebuildBLAS) {
+            RAYGUN_DEBUG("Building BLAS from scratch");
+            model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd1, *model->mesh,
+                                                                   m_forceRebuildBLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+                                                                                      : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        }
+        else {
+            // if(m_updateBLAS) {
+            //     model->bottomLevelAS->updateBLAS(cmd1, *model->mesh);
+            // }
+        }
+    }
+
+    auto procModels = RG().resourceManager().procModels();
+    for(auto& model: procModels) {
+        if(!model->bottomLevelAS || m_forceRebuildBLAS) {
+            model->bottomLevelAS = std::make_unique<BottomLevelAS>(*cmd1, *model,
+                                                                   m_forceRebuildBLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+                                                                                      : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+        }
+        else {
+            // if(m_updateBLAS) {
+            //     model->bottomLevelAS->updateBLAS(cmd1, *model);
+            // }
+        }
+    }
+    cmd1->end();
+    vc.computeQueue->submit(*cmd1, *fence);
+    vc.waitForFence(*fence);
+    // accelerationStructureBarrier(cmd2);
+    // RG().profiler().writeTimestamp(cmd2, TimestampQueryID::BLASBuildEnd);
+}
+
 void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
 {
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::TLASBuildStart);
@@ -119,6 +165,38 @@ void Raytracer::setupTopLevelAS(vk::CommandBuffer& cmd, const Scene& scene)
     accelerationStructureBarrier(cmd);
 
     RG().profiler().writeTimestamp(cmd, TimestampQueryID::TLASBuildEnd);
+}
+
+void Raytracer::setupTopLevelASpreload(const Scene& scene)
+{
+    auto cmd1 = vc.computeQueue->createCommandBuffer();
+    vc.setObjectName(*cmd1, "TLAS preload");
+
+    auto fence = vc.device->createFenceUnique({});
+    vc.setObjectName(*fence, "TLAS preload");
+
+    cmd1->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+
+    // RG().profiler().writeTimestamp(cmd, TimestampQueryID::TLASBuildStart);
+
+    if(!m_topLevelAS || m_forceRebuildTLAS) {
+        RAYGUN_DEBUG("Building TLAS from scratch");
+        m_topLevelAS = std::make_unique<TopLevelAS>(*cmd1, scene,
+                                                    m_forceRebuildTLAS ? vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace
+                                                                       : vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
+    }
+    else {
+        // if(m_updateTLAS) {
+        //     m_topLevelAS->updateTLAS(cmd, scene);
+        // }
+    }
+
+    cmd1->end();
+    vc.computeQueue->submit(*cmd1, *fence);
+    vc.waitForFence(*fence);
+    // accelerationStructureBarrier(cmd);
+
+    // RG().profiler().writeTimestamp(cmd, TimestampQueryID::TLASBuildEnd);
 }
 
 const gpu::Image& Raytracer::doRaytracing(vk::CommandBuffer& cmd)
@@ -232,7 +310,7 @@ void Raytracer::updateRenderTarget(const gpu::Buffer& uniformBuffer, const gpu::
 void Raytracer::resetTLAS()
 {
     m_topLevelAS.reset();
-    m_procBotLevel.reset();
+    // m_procBotLevel.reset();
 }
 
 void Raytracer::setupRaytracingImages()

@@ -270,7 +270,7 @@ void VulkanContext::setupDevice()
     info.setPQueueCreateInfos(queueInfos.data());
     info.setEnabledExtensionCount((uint32_t)extensions.size());
     info.setPpEnabledExtensionNames(extensions.data());
-    info.setPNext(&accelerationStructureFeatures);
+    info.setPNext(&pipelineFeatures);
     info.setPEnabledFeatures(&feat);
 
     device = physicalDevice.createDeviceUnique(info);
