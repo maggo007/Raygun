@@ -338,11 +338,11 @@ void Raygun::finalizeLoadScene()
 
     m_renderSystem->setupProceduralBuffers();
     // moved to rendersystem
-    m_renderSystem->raytracer().setupBottomLevelASpreload();
+    // m_renderSystem->raytracer().setupBottomLevelASpreload();
 
     m_renderSystem->raytracer().resetTLAS();
 
-    m_renderSystem->raytracer().setupTopLevelASpreload(*m_scene);
+    // m_renderSystem->raytracer().setupTopLevelASpreload(*m_scene);
 
     m_timestamp = Clock::now();
 

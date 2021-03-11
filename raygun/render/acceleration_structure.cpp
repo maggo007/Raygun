@@ -56,12 +56,12 @@ namespace {
     }
 
     std::tuple<vk::UniqueAccelerationStructureKHR, gpu::UniqueBuffer, gpu::UniqueBuffer>
-    createStructureMemoryScratch(vk::AccelerationStructureBuildGeometryInfoKHR& buildInfo)
+    createStructureMemoryScratch(vk::AccelerationStructureBuildGeometryInfoKHR& buildInfo, uint32_t facenumbers)
     {
         VulkanContext& vc = RG().vc();
 
         vk::AccelerationStructureBuildSizesInfoKHR sizeInfo =
-            vc.device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, buildInfo, buildInfo.geometryCount);
+            vc.device->getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, buildInfo, facenumbers);
 
         //      vk::AccelerationStructureCreateInfoKHR createInfo;
         //      createInfo.setType(buildInfo.type);
@@ -98,7 +98,8 @@ namespace {
 
         //     vc.device->bindAccelerationStructureMemoryKHR(bindInfo);
         // }
-
+        RAYGUN_DEBUG("Memory {} for Type:{} with geometrycount:{}", sizeInfo.accelerationStructureSize, (int)buildInfo.type == 0 ? "TOPLEVEL" : "BOTLEVEL",
+                     buildInfo.geometryCount);
         vk::AccelerationStructureCreateInfoKHR createInfo = {};
         createInfo.setType(buildInfo.type);
         createInfo.setSize(sizeInfo.accelerationStructureSize);
@@ -242,6 +243,10 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         vk::AccelerationStructureGeometryDataKHR geometryData = {};
         geometryData.setInstances(instancesData);
 
+        vk::AccelerationStructureGeometryKHR geometry = {};
+        geometry.setGeometryType(vk::GeometryTypeKHR::eInstances);
+        geometry.setGeometry(geometryData);
+
         std::array<vk::AccelerationStructureGeometryKHR, 1> geometries;
         geometries[0].setGeometry(geometryData);
         geometries[0].setGeometryType(vk::GeometryTypeKHR::eInstances);
@@ -253,10 +258,10 @@ TopLevelAS::TopLevelAS(const vk::CommandBuffer& cmd, const Scene& scene, vk::Bui
         buildInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
         // buildInfo.setDstAccelerationStructure(*m_structure);
         buildInfo.setGeometryCount((uint32_t)geometries.size());
-        buildInfo.setPpGeometries(&pGeometires);
+        buildInfo.setPGeometries(&geometry);
         buildInfo.setFlags(updatebit);
 
-        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo);
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo, 1);
 
         vc.setObjectName(*m_structure, "TLAS Structure");
         // vc.setObjectName(*m_memory, "TLAS Memory");
@@ -410,7 +415,7 @@ void TopLevelAS::updateTLAS(const vk::CommandBuffer& cmd, const Scene& scene)
         buildInfo.setFlags(vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate);
         // if(!rebuild) buildInfo.setUpdate(true);
         if(rebuild) {
-            std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo);
+            std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo, 1);
             vc.setObjectName(*m_structure, "TLAS Structure");
             // vc.setObjectName(*m_memory, "TLAS Memory");
             m_scratch->setName("TLAS Scratch");
@@ -488,7 +493,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const Mesh& mesh, vk:
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
 
-        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo);
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo, mesh.numFaces());
 
         buildInfo.setScratchData(m_scratch->address());
 
@@ -534,6 +539,7 @@ void BottomLevelAS::updateBLAS(const vk::CommandBuffer& cmd, const Mesh& mesh)
         triangles.setVertexStride(mesh.vertexBufferRef.elementSize);
         triangles.setIndexData(mesh.indexBufferRef.bufferAddress);
         triangles.setIndexType(vk::IndexType::eUint32);
+        triangles.setMaxVertex((uint32_t)mesh.vertices.size());
 
         vk::AccelerationStructureBuildRangeInfoKHR offsetInfo = {};
         offsetInfo.setPrimitiveCount((uint32_t)mesh.numFaces());
@@ -634,7 +640,7 @@ BottomLevelAS::BottomLevelAS(const vk::CommandBuffer& cmd, const ProcModel& proc
         buildInfo.setGeometryCount((uint32_t)geometries.size());
         buildInfo.setPpGeometries(&pGeometires);
 
-        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo);
+        std::tie(m_structure, m_memory, m_scratch) = createStructureMemoryScratch(buildInfo, 1);
 
         vc.setObjectName(*m_structure, "BLAS Structure");
         // vc.setObjectName(*m_memory, "BLAS Memory");
